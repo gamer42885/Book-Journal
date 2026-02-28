@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yearly Book Summary</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    transition: background 0.3s, color 0.3s;
+}
+.dark-mode { background-color: #121212; color: #f4f4f4; }
+
+.topnav { background-color: #333; overflow: hidden; }
+.topnav a {
+    float: left;
+    color: white;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+.topnav a:hover { background-color: #04AA6D; }
+
+.container { padding: 20px; }
+
+button {
+    padding: 8px 12px;
+    background: #04AA6D;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin: 10px 0;
+}
+button:hover { opacity: 0.9; }
+
+.summary-box {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+.dark-mode .summary-box { background: #1e1e1e; }
+
+.progress-container {
+    background: #ddd;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 400px;
+    margin: 5px 0;
+}
+.progress-bar {
+    height: 20px;
+    border-radius: 20px;
+    background: #04AA6D;
+    width: 0%;
+    text-align: center;
+    color: white;
+    font-size: 12px;
+    transition: width 0.3s;
+}
+
+@media (max-width: 600px) {
+    table, thead, tbody, th, td, tr { display: block; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- Navigation -->
+<div class="topnav">
+    <a href="index.html">Home</a>
+    <a href="Book_Series.html">Book Series</a>
+    <a href="Monthly_Tracker.html">Monthly Tracker</a>
+    <a href="Yearly.html">Yearly Tracker</a>
+    <a href="#" id="darkModeToggle">🌙 Dark Mode</a>
+</div>
+
+<div class="container">
+
+<h2>Yearly Book Summary</h2>
+<button id="exportYearPdfBtn">Export Year as PDF</button>
+
+<div id="yearSummary" class="summary-box"></div>
+<div id="dashboard"></div>
+
+</div>
+
+<script>
+// -------------------- Dark Mode --------------------
+document.getElementById('darkModeToggle').addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+});
+
+// -------------------- Render Dashboard --------------------
+function renderDashboard() {
+    const months = JSON.parse(localStorage.getItem("months")) || [];
+    const books = JSON.parse(localStorage.getItem("books")) || [];
+    const goals = JSON.parse(localStorage.getItem("goals")) || {};
+    const container = document.getElementById("dashboard");
+
+    container.innerHTML = "";
+
+    // ---- Yearly Summary ----
+    const totalBooks = books.length;
+    const totalPages = books.reduce((sum, b) => sum + Number(b.pages || 0), 0);
+    const avgRating = totalBooks
+        ? (books.reduce((sum, b) => sum + Number(b.rating || 0), 0) / totalBooks).toFixed(2)
+        : 0;
+
+    const genreCount = {};
+    books.forEach(b => {
+        if (!b.tags) return;
+        b.tags.split(",").forEach(tag => {
+            tag = tag.trim();
+            if (tag) genreCount[tag] = (genreCount[tag] || 0) + 1;
+        });
+    });
+
+    const topGenres = Object.entries(genreCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([g, c]) => `${g} (${c})`)
+        .join(", ");
+
+    document.getElementById("yearSummary").innerHTML = `
+        <h3>Yearly Summary</h3>
+        <p>Total Books Read: ${totalBooks}</p>
+        <p>Total Pages Read: ${totalPages}</p>
+        <p>Average Rating: ${avgRating}</p>
+        <p>Top Genres: ${topGenres || "N/A"}</p>
+    `;
+
+    // ---- Monthly Breakdown ----
+    months.forEach(m => {
+        const monthBooks = books.filter(b => b.month === m.value);
+        const goalBooks = goals[m.value]?.books || 0;
+        const goalPages = goals[m.value]?.pages || 0;
+
+        const totalBooksMonth = monthBooks.length;
+        const totalPagesMonth = monthBooks.reduce((sum, b) => sum + Number(b.pages || 0), 0);
+
+        const booksPct = goalBooks
+            ? Math.min(100, Math.round((totalBooksMonth / goalBooks) * 100))
+            : 0;
+
+        const pagesPct = goalPages
+            ? Math.min(100, Math.round((totalPagesMonth / goalPages) * 100))
+            : 0;
+
+        const div = document.createElement("div");
+        div.className = "summary-box";
+        div.innerHTML = `
+            <h3>${m.label}</h3>
+            <p>Books: ${totalBooksMonth}/${goalBooks}</p>
+            <div class="progress-container">
+                <div class="progress-bar" style="width:${booksPct}%">${booksPct}%</div>
+            </div>
+            <p>Pages: ${totalPagesMonth}/${goalPages}</p>
+            <div class="progress-container">
+                <div class="progress-bar" style="width:${pagesPct}%">${pagesPct}%</div>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+renderDashboard();
+
+// -------------------- Export Yearly PDF --------------------
+document.getElementById("exportYearPdfBtn").addEventListener("click", () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const months = JSON.parse(localStorage.getItem("months")) || [];
+    const books = JSON.parse(localStorage.getItem("books")) || [];
+    const goals = JSON.parse(localStorage.getItem("goals")) || {};
+
+    let y = 10;
+
+    doc.setFontSize(18);
+    doc.text("Yearly Reading Report", 10, y);
+    y += 10;
+
+    const totalBooks = books.length;
+    const totalPages = books.reduce((sum, b) => sum + Number(b.pages || 0), 0);
+    const avgRating = totalBooks
+        ? (books.reduce((sum, b) => sum + Number(b.rating || 0), 0) / totalBooks).toFixed(2)
+        : 0;
+
+    doc.setFontSize(12);
+    doc.text(`Total Books: ${totalBooks}`, 10, y); y += 6;
+    doc.text(`Total Pages: ${totalPages}`, 10, y); y += 6;
+    doc.text(`Average Rating: ${avgRating}`, 10, y); y += 10;
+
+    months.forEach(m => {
+        if (y > 270) {
+            doc.addPage();
+            y = 10;
+        }
+
+        const monthBooks = books.filter(b => b.month === m.value);
+        const goalBooks = goals[m.value]?.books || 0;
+        const goalPages = goals[m.value]?.pages || 0;
+
+        const totalBooksMonth = monthBooks.length;
+        const totalPagesMonth = monthBooks.reduce((sum, b) => sum + Number(b.pages || 0), 0);
+
+        doc.setFontSize(14);
+        doc.text(m.label, 10, y); y += 6;
+
+        doc.setFontSize(11);
+        doc.text(`Books: ${totalBooksMonth}/${goalBooks}`, 10, y); y += 5;
+        doc.text(`Pages: ${totalPagesMonth}/${goalPages}`, 10, y); y += 8;
+    });
+
+    doc.save("Yearly_Reading_Report.pdf");
+});
+</script>
+
+</body>
+</html>

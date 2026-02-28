@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book Series</title>
+<style>
+/* -------------------- General -------------------- */
+body {
+    margin:0;
+    font-family: Arial,sans-serif;
+    background:#f4f4f4;
+    transition: background 0.3s, color 0.3s;
+}
+.dark-mode { background:#121212; color:#f4f4f4; }
+
+.topnav { background:#333; overflow:hidden; }
+.topnav a { float:left; color:white; padding:14px 16px; text-decoration:none; }
+.topnav a:hover { background:#04AA6D; }
+
+.container { padding:20px; }
+button { padding:8px 12px; background:#04AA6D; color:white; border:none; cursor:pointer; margin:10px 0; }
+button:hover { opacity:0.9; }
+
+/* -------------------- Table -------------------- */
+.table-wrapper { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+table { width:100%; min-width:700px; border-collapse:collapse; background:white; }
+.dark-mode table { background:#1e1e1e; }
+th, td { padding:10px; border:1px solid #ccc; text-align:center; white-space:nowrap; }
+img { width:80px; display:block; margin:0 auto 5px; }
+input[type="checkbox"] { margin-top:5px; }
+.progress-container { width:100%; background:#ddd; border-radius:5px; margin:5px 0; }
+.progress-bar { height:15px; background:#04AA6D; border-radius:5px; text-align:center; color:white; font-size:12px; line-height:15px; }
+
+/* Scroll hint on mobile */
+@media(max-width:768px){
+    table, thead { display:none; }
+    #seriesTable tbody { display:block; }
+    #seriesTable tr { display:block; background:white; margin-bottom:20px; padding:15px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+    .dark-mode #seriesTable tr { background:#1e1e1e; }
+    td { display:block; border:none; text-align:left; margin-bottom:10px; }
+    .book-card { background:#f9f9f9; padding:10px; border-radius:10px; margin-bottom:10px; }
+    .dark-mode .book-card { background:#2a2a2a; }
+    .book-controls { display:flex; gap:10px; justify-content:flex-start; flex-wrap:wrap; }
+}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <a href="index.html">Home</a>
+  <a href="Book_Series.html">Book Series</a>
+  <a href="Monthly_Tracker.html">Monthly Tracker</a>
+  <a href="Yearly.html">Yearly Tracker</a>
+  <a href="#" id="darkModeToggle">🌙 Dark Mode</a>
+</div>
+
+<div class="container">
+    <h2>Book Series</h2>
+
+    <form id="addSeriesForm">
+        <h3>Add New Series</h3>
+        <input type="text" id="seriesName" placeholder="Series Name" required>
+        <input type="text" id="seriesAuthor" placeholder="Author" required>
+        <div id="bookInputs">
+            <div class="book-input">
+                <input type="text" placeholder="Book Title" class="bookTitle">
+                <input type="file" accept="image/*" class="bookCover">
+            </div>
+        </div>
+        <button type="button" id="addBookBtn">+ Add Another Book</button>
+        <button type="submit">Add Series</button>
+    </form>
+    
+    <h3>Overall Totals</h3>
+<div id="overallTotals">
+    <strong>Have:</strong> <span id="totalHave">0</span> |
+    <strong>Read:</strong> <span id="totalRead">0</span> |
+    <strong>Total Books:</strong> <span id="totalBooks">0</span>
+</div>
+
+    <div class="table-wrapper">
+        <table id="seriesTable">
+            <thead><tr><th>Series / Author</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <button onclick="saveCheckboxStates()">Save Checkbox States</button>
+</div>
+
+<script>
+// ---------------- Dark Mode ----------------
+document.getElementById('darkModeToggle').addEventListener('click', ()=> {
+    document.body.classList.toggle('dark-mode');
+});
+
+// ---------------- Data ----------------
+function getSeriesData(){ return JSON.parse(localStorage.getItem('seriesData')||'[]'); }
+function saveSeriesData(data){ localStorage.setItem('seriesData',JSON.stringify(data)); }
+function getCheckboxState(){ return JSON.parse(localStorage.getItem('checkboxState')||'{}'); }
+function saveCheckboxState(state){ localStorage.setItem('checkboxState',JSON.stringify(state)); }
+
+// ---------------- Add Series ----------------
+document.getElementById('addBookBtn').addEventListener('click',()=>{
+    const div=document.createElement('div');
+    div.className='book-input';
+    div.innerHTML=`<input type="text" placeholder="Book Title" class="bookTitle">
+                   <input type="file" accept="image/*" class="bookCover">`;
+    document.getElementById('bookInputs').appendChild(div);
+});
+
+document.getElementById('addSeriesForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const name=document.getElementById('seriesName').value.trim();
+    const author=document.getElementById('seriesAuthor').value.trim();
+    const bookDivs=document.querySelectorAll('.book-input');
+    const books=[];
+
+    for(let div of bookDivs){
+        const title=div.querySelector('.bookTitle').value.trim();
+        const file=div.querySelector('.bookCover').files[0];
+        if(title){
+            const cover=file?await new Promise(res=>{
+                const r=new FileReader();
+                r.onload=()=>res(r.result);
+                r.readAsDataURL(file);
+            }):"";
+            books.push({title,cover});
+        }
+    }
+
+    const data=getSeriesData();
+    data.push({name,author,books});
+    saveSeriesData(data);
+
+    document.getElementById('addSeriesForm').reset();
+    document.getElementById('bookInputs').innerHTML=`<div class="book-input">
+        <input type="text" placeholder="Book Title" class="bookTitle">
+        <input type="file" accept="image/*" class="bookCover">
+    </div>`;
+    renderTable();
+});
+
+// ---------------- Render ----------------
+function renderTable(){
+    const body=document.querySelector('#seriesTable tbody');
+    body.innerHTML="";
+    const data=getSeriesData();
+    const maxBooks=data.length>0?Math.max(...data.map(s=>s.books.length)):0;
+
+    const headRow=document.querySelector('#seriesTable thead tr');
+    headRow.innerHTML='<th>Series / Author</th>';
+    for(let i=0;i<maxBooks;i++) headRow.innerHTML+=`<th>Book ${i+1}</th>`;
+
+    const state=getCheckboxState();
+
+    data.forEach((series,sIndex)=>{
+        const tr=document.createElement('tr');
+
+        const tdInfo=document.createElement('td');
+        tdInfo.innerHTML=`<strong>${series.name}</strong><br>${series.author}
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-${sIndex}">0%</div>
+            </div>
+            <span class="series-counter"></span><br>
+            <button onclick="addBookToSeries(${sIndex})">Add Book</button>
+            <button onclick="removeSeries(${sIndex})">Remove Series</button>`;
+        tr.appendChild(tdInfo);
+
+        series.books.forEach((book,bIndex)=>{
+            const td=document.createElement('td');
+            const haveId=`have-${sIndex}-${bIndex}`;
+            const readId=`read-${sIndex}-${bIndex}`;
+            td.innerHTML=`<div class="book-card" draggable="true"
+                             ondragstart="dragStart(event,${sIndex},${bIndex})"
+                             ondragover="allowDrop(event)"
+                             ondrop="dropBook(event,${sIndex},${bIndex})">
+                            ${book.title}${book.cover?`<br><img src="${book.cover}" class="book-cover">`:""}
+                            <div class="book-controls">
+                                <label><input type="checkbox" id="${haveId}" ${state[haveId]?"checked":""} onchange="updateCheckbox('${haveId}')">Have</label>
+                                <label><input type="checkbox" id="${readId}" ${state[readId]?"checked":""} onchange="handleRead('${readId}','${haveId}')">Read</label>
+                            </div>
+                            <button onclick="deleteBook(${sIndex},${bIndex})">Delete</button>
+                        </div>`;
+            tr.appendChild(td);
+        });
+        body.appendChild(tr);
+    });
+    updateCounters();
+}
+
+// ---------------- Checkboxes ----------------
+function updateCheckbox(id){
+    const state=getCheckboxState();
+    const box=document.getElementById(id);
+    state[id]=box.checked;
+    saveCheckboxState(state);
+    updateCounters();
+}
+function handleRead(readId,haveId){
+    const readBox=document.getElementById(readId);
+    const haveBox=document.getElementById(haveId);
+    if(readBox.checked) haveBox.checked=true;
+    updateCheckbox(readId);
+    updateCheckbox(haveId);
+}
+
+// ---------------- Progress ----------------
+function updateCounters(){
+    const data=getSeriesData();
+
+    let grandTotalBooks = 0;
+    let grandTotalRead = 0;
+    let grandTotalHave = 0;
+
+    data.forEach((series,sIndex)=>{
+        const total=series.books.length;
+        let readCount=0;
+        let haveCount=0;
+
+        series.books.forEach((_,bIndex)=>{
+            const readId=`read-${sIndex}-${bIndex}`;
+            const haveId=`have-${sIndex}-${bIndex}`;
+
+            if(document.getElementById(readId)?.checked){
+                readCount++;
+                grandTotalRead++;
+            }
+            if(document.getElementById(haveId)?.checked){
+                haveCount++;
+                grandTotalHave++;
+            }
+        });
+
+        grandTotalBooks += total;
+
+        const percent=total?Math.round((readCount/total)*100):0;
+        const bar=document.getElementById(`progress-${sIndex}`);
+        if(bar){
+            bar.style.width=percent+"%";
+            bar.textContent=percent+"%";
+        }
+
+        const counter=document.querySelectorAll('.series-counter')[sIndex];
+        if(counter){
+            counter.textContent=`${readCount}/${total} Read | ${haveCount}/${total} Have`;
+        }
+    });
+
+    // Update overall totals
+    document.getElementById('totalBooks').textContent = grandTotalBooks;
+    document.getElementById('totalRead').textContent = grandTotalRead;
+    document.getElementById('totalHave').textContent = grandTotalHave;
+}
+
+// ---------------- Delete ----------------
+function deleteBook(s,b){
+    const data=getSeriesData();
+    data[s].books.splice(b,1);
+    saveSeriesData(data);
+    renderTable();
+}
+function removeSeries(s){
+    const data=getSeriesData();
+    data.splice(s,1);
+    saveSeriesData(data);
+    renderTable();
+}
+
+// ---------------- Add book to existing series ----------------
+async function addBookToSeries(s){
+    const title=prompt("Book title:");
+    if(!title) return;
+    const coverFile=await new Promise(res=>{
+        const input=document.createElement('input');
+        input.type='file'; input.accept='image/*';
+        input.onchange=e=>res(input.files[0]);
+        input.click();
+    });
+    let cover="";
+    if(coverFile){
+        cover=await new Promise(res=>{
+            const r=new FileReader();
+            r.onload=()=>res(r.result);
+            r.readAsDataURL(coverFile);
+        });
+    }
+    const data=getSeriesData();
+    data[s].books.push({title,cover});
+    saveSeriesData(data);
+    renderTable();
+}
+
+// ---------------- Drag ----------------
+let dragged=null;
+function dragStart(e,s,b){ dragged={s,b}; }
+function allowDrop(e){ e.preventDefault(); }
+function dropBook(e,s,target){ 
+    e.preventDefault();
+    if(!dragged || dragged.s!==s) return;
+    const data=getSeriesData();
+    const book=data[s].books.splice(dragged.b,1)[0];
+    data[s].books.splice(target,0,book);
+    saveSeriesData(data);
+    renderTable();
+}
+
+// ---------------- Init ----------------
+document.addEventListener('DOMContentLoaded',renderTable);
+function saveCheckboxStates(){ saveCheckboxState(getCheckboxState()); alert("Checkboxes saved!"); }
+</script>
+</body>
+</html>

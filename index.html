@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reading Dashboard</title>
+<style>
+body {
+    margin:0;
+    font-family: Arial,sans-serif;
+    background-color:#f4f4f4;
+    transition: background 0.3s,color 0.3s;
+}
+.dark-mode { background:#121212; color:#f4f4f4; }
+
+.topnav { background:#333; overflow:hidden; }
+.topnav a { float:left; color:white; padding:14px 16px; text-decoration:none; }
+.topnav a:hover { background:#04AA6D; }
+
+.container { padding:30px; }
+
+.hero { text-align:center; margin-bottom:40px; }
+.hero h1 { margin-bottom:10px; }
+.hero p { font-size:18px; opacity:0.8; }
+
+.stats-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:20px;
+    margin-bottom:40px;
+}
+.stat-card {
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    text-align:center;
+    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+}
+.dark-mode .stat-card { background:#1e1e1e; }
+.stat-card h3 { margin:0; font-size:28px; }
+.stat-card p { margin:5px 0 0; opacity:0.7; }
+
+.section { margin-bottom:40px; }
+
+.progress-container {
+    background:#ddd;
+    border-radius:20px;
+    width:100%;
+    max-width:400px;
+    margin:5px 0;
+}
+.progress-bar {
+    height:20px;
+    border-radius:20px;
+    background:#04AA6D;
+    width:0%;
+    text-align:center;
+    color:white;
+    font-size:12px;
+}
+
+.reading-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:20px;
+}
+.reading-card {
+    background:white;
+    padding:15px;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+    text-align:center;
+}
+.dark-mode .reading-card { background:#1e1e1e; }
+.reading-card img { width:100px; margin-bottom:10px; }
+
+@media(max-width:600px){
+    .stats-grid,.reading-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <a href="index.html">Home</a>
+  <a href="Book_Series.html">Book Series</a>
+  <a href="Monthly_Tracker.html">Monthly Tracker</a>
+  <a href="Yearly.html">Yearly Tracker</a>
+  <a href="#" id="darkModeToggle">🌙 Dark Mode</a>
+</div>
+
+<div class="container">
+
+<div class="hero">
+    <h1>📚 My Reading Dashboard</h1>
+    <p>Track your books and monitor your progress.</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3 id="totalBooks">0</h3>
+        <p>Total Books</p>
+    </div>
+    <div class="stat-card">
+        <h3 id="totalPages">0</h3>
+        <p>Total Pages</p>
+    </div>
+    <div class="stat-card">
+        <h3 id="finishedBooks">0</h3>
+        <p>Finished</p>
+    </div>
+    <div class="stat-card">
+        <h3 id="inProgressBooks">0</h3>
+        <p>Currently Reading</p>
+    </div>
+</div>
+
+<!-- Current Month Progress -->
+<div class="section">
+    <h2>📈 Current Month Progress</h2>
+    <div>
+        <p>Books Read: <span id="monthBooks">0</span>/<span id="monthGoalBooks">0</span></p>
+        <div class="progress-container">
+            <div id="booksProgress" class="progress-bar">0%</div>
+        </div>
+        <p>Pages Read: <span id="monthPages">0</span>/<span id="monthGoalPages">0</span></p>
+        <div class="progress-container">
+            <div id="pagesProgress" class="progress-bar">0%</div>
+        </div>
+    </div>
+</div>
+
+<!-- Currently Reading -->
+<div class="section">
+    <h2>📖 Currently Reading</h2>
+    <div id="currentlyReading" class="reading-grid"></div>
+</div>
+
+<!-- Recently Finished -->
+<div class="section">
+    <h2>🏁 Recently Finished</h2>
+    <div id="recentlyFinished" class="reading-grid"></div>
+</div>
+
+</div>
+
+<script>
+document.getElementById('darkModeToggle').addEventListener('click',()=>{document.body.classList.toggle('dark-mode');});
+
+function updateDashboard() {
+    const books = JSON.parse(localStorage.getItem("books"))||[];
+    const goals = JSON.parse(localStorage.getItem("goals"))||{};
+    
+    const totalPages = books.reduce((sum,b)=>sum+Number(b.pages||0),0);
+    const finished = books.filter(b=>b.ended).length;
+    const inProgress = books.filter(b=>b.started&&!b.ended);
+
+    document.getElementById("totalBooks").textContent = books.length;
+    document.getElementById("totalPages").textContent = totalPages;
+    document.getElementById("finishedBooks").textContent = finished;
+    document.getElementById("inProgressBooks").textContent = inProgress.length;
+
+    renderCurrentlyReading(inProgress);
+    renderRecentFinished(books);
+    renderMonthProgress(books, goals);
+}
+
+function renderCurrentlyReading(list){
+    const container = document.getElementById("currentlyReading");
+    container.innerHTML = list.length ? "" : "<p>No books currently in progress.</p>";
+    list.forEach(book=>{
+        const card = document.createElement("div");
+        card.className="reading-card";
+        card.innerHTML=`${book.cover?`<img src="${book.cover}">`:""}
+            <h4>${book.title}</h4>
+            <p>${book.author||""}</p>
+            <p>${book.pages?book.pages+" pages":""}</p>
+            <p>${"★".repeat(book.rating||0)}</p>`;
+        container.appendChild(card);
+    });
+}
+
+function renderRecentFinished(books){
+    const finishedBooks = books.filter(b=>b.ended).sort((a,b)=>new Date(b.ended)-new Date(a.ended)).slice(0,5);
+    const container = document.getElementById("recentlyFinished");
+    container.innerHTML = finishedBooks.length ? "" : "<p>No recently finished books.</p>";
+    finishedBooks.forEach(book=>{
+        const card = document.createElement("div");
+        card.className="reading-card";
+        card.innerHTML=`${book.cover?`<img src="${book.cover}">`:""}
+            <h4>${book.title}</h4>
+            <p>${book.author||""}</p>
+            <p>${book.pages?book.pages+" pages":""}</p>
+            <p>${"★".repeat(book.rating||0)}</p>`;
+        container.appendChild(card);
+    });
+}
+
+function renderMonthProgress(books, goals){
+    const currentMonth = new Date().toISOString().slice(0,7);
+    const monthBooks = books.filter(b=>b.month===currentMonth && b.ended);
+    const totalBooks = monthBooks.length;
+    const totalPages = monthBooks.reduce((sum,b)=>sum+b.pages,0);
+    const goalBooks = goals[currentMonth]?.books||0;
+    const goalPages = goals[currentMonth]?.pages||0;
+
+    document.getElementById("monthBooks").textContent = totalBooks;
+    document.getElementById("monthGoalBooks").textContent = goalBooks;
+    document.getElementById("monthPages").textContent = totalPages;
+    document.getElementById("monthGoalPages").textContent = goalPages;
+
+    const booksPct = goalBooks ? Math.min(100, Math.round(totalBooks/goalBooks*100)) : 0;
+    const pagesPct = goalPages ? Math.min(100, Math.round(totalPages/goalPages*100)) : 0;
+
+    document.getElementById("booksProgress").style.width = booksPct+"%";
+    document.getElementById("booksProgress").textContent = booksPct+"%";
+    document.getElementById("pagesProgress").style.width = pagesPct+"%";
+    document.getElementById("pagesProgress").textContent = pagesPct+"%";
+}
+
+updateDashboard();
+</script>
+
+</body>
+</html>

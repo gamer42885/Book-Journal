@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dynamic Monthly Book Tracker</title>
+<style>
+body {
+	margin:0;
+	font-family: Arial,sans-serif;
+	background-color:#f4f4f4;
+	transition: background 0.3s, color 0.3s; 
+}
+.dark-mode { background-color:#121212; color:#f4f4f4; }
+
+.topnav { background-color:#333; overflow:hidden; }
+.topnav a { float:left; color:white; padding:14px 16px; text-decoration:none; }
+.topnav a:hover { background-color:#04AA6D; }
+
+.container { padding:20px; }
+
+form { background:white; padding:15px; border-radius:8px; margin-bottom:20px; }
+.dark-mode form { background:#1e1e1e; }
+
+input, select { margin:5px 0; padding:6px; width:100%; max-width:300px; }
+button { padding:8px 12px; background:#04AA6D; color:white; border:none; cursor:pointer; margin-top:10px; }
+button:hover { opacity:0.9; }
+
+table { width:100%; border-collapse: collapse; background:white; margin-top:15px; }
+.dark-mode table { background:#1e1e1e; }
+th, td { padding:10px; border:1px solid #ccc; text-align:left; }
+img { width:80px; }
+.star { font-size:20px; cursor:pointer; color:gray; }
+.star.selected { color:gold; }
+
+@media (max-width:600px){
+	table,thead,tbody,th,td,tr{ display:block; }
+}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <a href="#">Home</a>
+  <a href="#">Book Series</a>
+  <a href="#">Reading Stats</a>
+  <a href="#" id="darkModeToggle">🌙 Dark Mode</a>
+</div>
+
+<div class="container">
+<h2>Dynamic Monthly Book Tracker</h2>
+
+<label for="monthSelect">Select Month:</label>
+<select id="monthSelect"></select>
+<button id="addMonthBtn">+ Add Month</button>
+
+<h3>Add Book</h3>
+<form id="bookForm">
+  <label>Title:</label><input type="text" id="title" required>
+  <label>Author:</label><input type="text" id="author">
+  <label>Published:</label><input type="text" id="published">
+  <label># of Pages:</label><input type="number" id="pages">
+  <label>Date Started:</label><input type="date" id="dateStarted">
+  <label>Date Ended:</label><input type="date" id="dateEnded">
+  <label>Format:</label>
+  <select id="format"><option>Book</option><option>Ebook</option><option>Audio</option></select>
+  <label>Genres (comma separated):</label><input type="text" id="tags">
+  <label>Rating:</label>
+  <div id="starRating">
+    <span class="star" data-value="1">★</span>
+    <span class="star" data-value="2">★</span>
+    <span class="star" data-value="3">★</span>
+    <span class="star" data-value="4">★</span>
+    <span class="star" data-value="5">★</span>
+  </div>
+  <label>Book Cover:</label><input type="file" id="cover" accept="image/*">
+  <button type="submit">Add Book</button>
+</form>
+
+<h3>Reading Stats for Selected Month</h3>
+<div id="stats"></div>
+
+<h3>My Books</h3>
+<button id="exportBtn">Export to CSV</button>
+<table id="bookTable">
+  <thead>
+    <tr><th>Title</th><th>Cover</th><th>Details</th><th>Rating</th><th>Delete</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+</div>
+
+<script>
+// -------------------- Dark Mode --------------------
+document.getElementById('darkModeToggle').addEventListener('click', ()=>{
+  document.body.classList.toggle('dark-mode');
+});
+
+// -------------------- Star Rating --------------------
+let rating = 0;
+document.querySelectorAll(".star").forEach((star,index,stars)=>{
+  star.addEventListener("click",()=>{
+    rating=star.dataset.value;
+    stars.forEach(s=>s.classList.remove("selected"));
+    for(let i=0;i<rating;i++){stars[i].classList.add("selected");}
+  });
+});
+
+// -------------------- Dynamic Month Dropdown --------------------
+function loadMonths() {
+  const monthSelect = document.getElementById("monthSelect");
+  monthSelect.innerHTML="";
+  let months=JSON.parse(localStorage.getItem("months"))||[];
+  months.forEach(m=>{
+    const option=document.createElement("option");
+    option.value=m.value; option.textContent=m.label;
+    monthSelect.appendChild(option);
+  });
+}
+
+document.getElementById("addMonthBtn").addEventListener("click", ()=>{
+  let label = prompt("Enter month name and year (e.g., March 2026):");
+  if(!label) return;
+  let value = prompt("Enter month value in YYYY-MM format (e.g., 2026-03):");
+  if(!value) return;
+  let months=JSON.parse(localStorage.getItem("months"))||[];
+  months.push({label,label,value:value});
+  localStorage.setItem("months",JSON.stringify(months));
+  loadMonths();
+});
+
+// Initialize months if none
+if(!localStorage.getItem("months")){
+  localStorage.setItem("months",JSON.stringify([{label:"February 2026", value:"2026-02"}]));
+}
+loadMonths();
+
+// -------------------- Add Book --------------------
+const form = document.getElementById("bookForm");
+form.addEventListener("submit", function(e){
+  e.preventDefault();
+  const month = document.getElementById("monthSelect").value;
+  const book={
+    title:title.value, author:author.value, published:published.value,
+    pages:pages.value, started:dateStarted.value, ended:dateEnded.value,
+    format:format.value, tags:tags.value, rating:rating, cover:"", month:month
+  };
+  const file=cover.files[0];
+  if(file){
+    const reader=new FileReader();
+    reader.onload=()=>{book.cover=reader.result; saveBook(book);};
+    reader.readAsDataURL(file);
+  } else { saveBook(book); }
+});
+
+function saveBook(book){
+  let books=JSON.parse(localStorage.getItem("books"))||[];
+  books.push(book);
+  localStorage.setItem("books",JSON.stringify(books));
+  displayBooks();
+  form.reset();
+  rating=0;
+  document.querySelectorAll(".star").forEach(s=>s.classList.remove("selected"));
+}
+
+// -------------------- Display Books --------------------
+function displayBooks(){
+  const month = document.getElementById("monthSelect").value;
+  const tbody=document.querySelector("#bookTable tbody");
+  tbody.innerHTML="";
+  let books=JSON.parse(localStorage.getItem("books"))||[];
+  let filtered = books.filter(b=>b.month===month);
+  filtered.forEach((book,index)=>{
+    const row=tbody.insertRow();
+    row.insertCell(0).textContent=book.title;
+    const imgCell=row.insertCell(1);
+    if(book.cover){ const img=document.createElement("img"); img.src=book.cover; imgCell.appendChild(img); }
+    row.insertCell(2).innerHTML=
+      `Author: ${book.author}<br>Published: ${book.published}<br>Pages: ${book.pages}<br>Started: ${book.started}<br>Ended: ${book.ended}<br>Format: ${book.format}<br>Genres: ${book.tags}`;
+    row.insertCell(3).textContent="★".repeat(book.rating);
+    const delCell=row.insertCell(4);
+    const delBtn=document.createElement("button");
+    delBtn.textContent="X";
+    delBtn.onclick=()=>{
+      books.splice(books.indexOf(filtered[index]),1);
+      localStorage.setItem("books",JSON.stringify(books));
+      displayBooks();
+    };
+    delCell.appendChild(delBtn);
+  });
+  calculateStats();
+}
+
+// -------------------- Stats per month --------------------
+function calculateStats(){
+  const month = document.getElementById("monthSelect").value;
+  const books=JSON.parse(localStorage.getItem("books"))||[];
+  const filtered = books.filter(b=>b.month===month);
+  let totalPages=filtered.reduce((sum,b)=>sum+Number(b.pages||0),0);
+  let inProgress=filtered.filter(b=>b.started && !b.ended).length;
+  let finished=filtered.filter(b=>b.ended).length;
+  let genreCount={};
+  filtered.forEach(b=>b.tags.split(",").forEach(tag=>{
+    tag=tag.trim(); if(tag) genreCount[tag]=(genreCount[tag]||0)+1;
+  }));
+  let avgRating = filtered.length? (filtered.reduce((sum,b)=>sum+Number(b.rating||0),0)/filtered.length).toFixed(2) : 0;
+  document.getElementById("stats").innerHTML=
+    `Total Books: ${filtered.length} | Finished: ${finished} | In Progress: ${inProgress} | Total Pages: ${totalPages} | Avg Rating: ${avgRating} | Genres: ${Object.entries(genreCount).map(([g,c])=>g+":"+c).join(", ")}`;
+}
+
+// -------------------- Export CSV --------------------
+document.getElementById("exportBtn").addEventListener("click",()=>{
+  let books=JSON.parse(localStorage.getItem("books"))||[];
+  if(!books.length){ alert("No books to export!"); return; }
+  let csv="Month,Title,Author,Published,Pages,Started,Ended,Format,Genres,Rating\n";
+  books.forEach(b=>{
+    csv+=`"${b.month}","${b.title}","${b.author}","${b.published}","${b.pages}","${b.started}","${b.ended}","${b.format}","${b.tags}","${b.rating}"\n`;
+  });
+  const blob=new Blob([csv],{type:"text/csv"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download="monthly_books.csv"; a.click();
+  URL.revokeObjectURL(url);
+});
+
+// Update display when month changes
+document.getElementById("monthSelect").addEventListener("change", displayBooks);
+
+// Initial load
+displayBooks();
+</script>
+
+</body>
+</html>
