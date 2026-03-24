@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly Book Tracker</title>
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    color: #000;
+}
+.topnav {
+    background: linear-gradient(90deg, #4caf50, #2e7d32);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 20px;
+    gap: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 12px;
+    margin: 20px;
+}
+.topnav a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+}
+.topnav a::after {
+    content: '';
+    display: block;
+    width: 0;
+    height: 3px;
+    background: #fff;
+    border-radius: 3px;
+    transition: width 0.3s;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.topnav a:hover { background: rgba(255, 255, 255, 0.15); }
+.topnav a:hover::after { width: 80%; }
+
+.container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+button {
+    padding: 8px 12px;
+    background: #04AA6D;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin: 5px 0;
+    border-radius: 8px;
+    font-weight: 600;
+}
+button:hover { opacity: 0.92; }
+
+.month-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+.month-controls label { flex: 0 0 auto; }
+.month-controls select {
+    flex: 1 1 220px;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+.month-controls button { flex: 0 0 auto; }
+
+#bookForm {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 10px 20px;
+    background: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+#bookForm input,
+#bookForm select,
+#bookForm button {
+    padding: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+#cover, #bookForm button[type="submit"] {
+    grid-column: span 2;
+}
+#bookForm button[type="submit"] {
+    border: none;
+}
+
+.stats-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+#stats {
+    background: #fff;
+    padding: 14px 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    line-height: 1.7;
+    flex: 1 1 550px;
+}
+.stat-line { margin-bottom: 6px; }
+.published-line {
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+.card-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.book-card {
+    display: grid;
+    grid-template-columns: 100px 1fr 160px;
+    gap: 12px;
+    align-items: center;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    padding: 12px;
+}
+.book-card img {
+    width: 85px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #ddd;
+}
+.book-details {
+    font-size: 14px;
+    line-height: 1.5;
+}
+.book-details strong { font-size: 17px; }
+.book-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.book-controls button {
+    font-size: 12px;
+    padding: 6px;
+}
+
+.format-badge {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.format-book { background: #c8e6c9; }
+.format-audio { background: #b3e5fc; }
+.format-ebook { background: #d1c4e9; }
+
+@media(max-width:700px){
+    #bookForm { grid-template-columns: 1fr; }
+    #cover, #bookForm button[type="submit"] { grid-column: 1; }
+
+    .book-card {
+        grid-template-columns: 85px 1fr;
+        grid-template-rows: auto auto;
+    }
+    .book-controls {
+        flex-direction: row;
+        gap: 6px;
+        justify-content: flex-start;
+        grid-column: 1 / -1;
+        flex-wrap: wrap;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <a href="index.html">Home</a>
+  <a href="Book_Series.html">Book Series</a>
+  <a href="Monthly_Tracker.html">Monthly Tracker</a>
+  <a href="Yearly_Tracker.html">Yearly Tracker</a>
+</div>
+
+<div class="container">
+    <h2>Monthly Book Tracker</h2>
+
+    <div class="month-controls">
+        <label for="monthSelect">Select Month:</label>
+        <select id="monthSelect"></select>
+        <button id="addMonthBtn">+ Add Month</button>
+        <button id="deleteMonthBtn" style="background:#c0392b;">Delete Month</button>
+    </div>
+
+    <h3>Add / Edit Book</h3>
+    <form id="bookForm">
+        <input type="text" id="title" placeholder="Title" required>
+        <input type="text" id="author" placeholder="Author">
+        <input type="text" id="published" placeholder="Published">
+        <input type="number" id="pages" placeholder="Pages">
+        <input type="text" id="audioLength" placeholder="Audio Length (e.g. 10h 30m)">
+        <input type="date" id="dateStarted">
+        <input type="date" id="dateEnded">
+        <select id="format">
+            <option>Book</option>
+            <option>Ebook</option>
+            <option>Audio</option>
+        </select>
+        <input type="text" id="tags" placeholder="Genres (comma separated)">
+        <select id="rating">
+            <option value="">Select Rating</option>
+            <option value="1">1 ★</option>
+            <option value="2">2 ★★</option>
+            <option value="3">3 ★★★</option>
+            <option value="4">4 ★★★★</option>
+            <option value="5">5 ★★★★★</option>
+        </select>
+        <input type="file" id="cover" accept="image/*">
+        <button type="submit">Save Book</button>
+    </form>
+
+    <h3>Reading Stats & Export</h3>
+    <div class="stats-wrap">
+        <div id="stats"></div>
+        <button id="exportPdfBtn" style="background:#8e44ad;">📄 Export Month to PDF</button>
+    </div>
+
+    <h3>My Books</h3>
+    <div class="card-grid" id="bookGrid"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const monthSelect = document.getElementById("monthSelect");
+const title = document.getElementById("title");
+const author = document.getElementById("author");
+const published = document.getElementById("published");
+const pages = document.getElementById("pages");
+const audioLength = document.getElementById("audioLength");
+const dateStarted = document.getElementById("dateStarted");
+const dateEnded = document.getElementById("dateEnded");
+const format = document.getElementById("format");
+const tags = document.getElementById("tags");
+const rating = document.getElementById("rating");
+const cover = document.getElementById("cover");
+const stats = document.getElementById("stats");
+
+let editIndex = null;
+
+// ---------------- Helpers ----------------
+function getBooks() {
+    return JSON.parse(localStorage.getItem("books")) || [];
+}
+
+function saveBooks(books) {
+    localStorage.setItem("books", JSON.stringify(books));
+}
+
+function getMonths() {
+    return JSON.parse(localStorage.getItem("months")) || [];
+}
+
+function saveMonths(months) {
+    localStorage.setItem("months", JSON.stringify(months));
+}
+
+function parseDays(started, ended) {
+    if (!started || !ended) return "-";
+    const start = new Date(started);
+    const end = new Date(ended);
+    return Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+}
+
+function extractPublishedYear(value) {
+    if (!value) return null;
+    const match = String(value).match(/\b(18|19|20|21)\d{2}\b/);
+    return match ? match[0] : null;
+}
+
+function parseAudioLengthToMinutes(value) {
+    if (!value) return 0;
+    const str = String(value).trim().toLowerCase();
+
+    if (/^\d+(\.\d+)?$/.test(str)) return Number(str);
+
+    if (/^\d{1,2}:\d{1,2}$/.test(str)) {
+        const parts = str.split(":").map(Number);
+        return (parts[0] * 60) + parts[1];
+    }
+
+    const hourMatch = str.match(/(\d+)\s*(h|hr|hrs|hour|hours)/);
+    const minuteMatch = str.match(/(\d+)\s*(m|min|mins|minute|minutes)/);
+
+    const hours = hourMatch ? Number(hourMatch[1]) : 0;
+    const minutes = minuteMatch ? Number(minuteMatch[1]) : 0;
+
+    if (hours || minutes) return (hours * 60) + minutes;
+    return 0;
+}
+
+function formatMinutes(totalMinutes) {
+    totalMinutes = Number(totalMinutes || 0);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+}
+
+function getFormatClass(value) {
+    const v = (value || "").trim().toLowerCase();
+    if (v === "audio") return "format-audio";
+    if (v === "ebook") return "format-ebook";
+    return "format-book";
+}
+
+// ---------------- Month Management ----------------
+const currentDate = new Date();
+const currentMonthValue = currentDate.toISOString().slice(0, 7);
+const currentMonthLabel = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+if (!localStorage.getItem("months")) {
+    saveMonths([{ label: currentMonthLabel, value: currentMonthValue }]);
+}
+
+function loadMonths() {
+    monthSelect.innerHTML = "";
+    let months = getMonths();
+
+    if (!months.find(m => m.value === currentMonthValue)) {
+        months.push({ label: currentMonthLabel, value: currentMonthValue });
+        saveMonths(months);
+    }
+
+    months.sort((a, b) => a.value.localeCompare(b.value));
+
+    months.forEach(m => {
+        const opt = document.createElement("option");
+        opt.value = m.value;
+        opt.textContent = m.label;
+        monthSelect.appendChild(opt);
+    });
+
+    if ([...monthSelect.options].some(opt => opt.value === currentMonthValue)) {
+        monthSelect.value = currentMonthValue;
+    }
+}
+
+document.getElementById("addMonthBtn").onclick = () => {
+    const label = prompt("Enter month name (e.g., March 2026):");
+    const value = prompt("Enter month value (YYYY-MM):");
+
+    if (!label || !value) return;
+
+    let months = getMonths();
+
+    if (months.some(m => m.value === value)) {
+        alert("That month already exists.");
+        monthSelect.value = value;
+        displayBooks();
+        return;
+    }
+
+    months.push({ label, value });
+    saveMonths(months);
+    loadMonths();
+    monthSelect.value = value;
+    displayBooks();
+};
+
+document.getElementById("deleteMonthBtn").onclick = () => {
+    const month = monthSelect.value;
+    if (!month) return;
+    if (!confirm("Delete this month and all its books?")) return;
+
+    let months = getMonths().filter(m => m.value !== month);
+    if (!months.length) {
+        months = [{ label: currentMonthLabel, value: currentMonthValue }];
+    }
+    saveMonths(months);
+
+    let books = getBooks().filter(b => b.month !== month);
+    saveBooks(books);
+
+    loadMonths();
+    displayBooks();
+};
+
+// ---------------- Add / Edit Book ----------------
+document.getElementById("bookForm").onsubmit = function(e) {
+    e.preventDefault();
+
+    const month = monthSelect.value;
+    let books = getBooks();
+
+    const book = {
+        title: title.value.trim(),
+        author: author.value.trim(),
+        published: published.value.trim(),
+        pages: Number(pages.value) || 0,
+        audioLength: audioLength.value.trim(),
+        started: dateStarted.value,
+        ended: dateEnded.value,
+        format: format.value,
+        tags: tags.value.trim(),
+        rating: Number(rating.value) || 0,
+        cover: "",
+        month
+    };
+
+    const file = cover.files[0];
+
+    const saveData = (coverData) => {
+        if (coverData) book.cover = coverData;
+
+        if (editIndex !== null) {
+            book.cover = book.cover || books[editIndex].cover || "";
+            books[editIndex] = book;
+            editIndex = null;
+        } else {
+            books.push(book);
+        }
+
+        saveBooks(books);
+        this.reset();
+        rating.value = "";
+        displayBooks();
+    };
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = () => saveData(reader.result);
+        reader.readAsDataURL(file);
+    } else {
+        saveData();
+    }
+};
+
+function editBook(book, index) {
+    editIndex = index;
+    title.value = book.title || "";
+    author.value = book.author || "";
+    published.value = book.published || "";
+    pages.value = book.pages || "";
+    audioLength.value = book.audioLength || "";
+    dateStarted.value = book.started || "";
+    dateEnded.value = book.ended || "";
+    format.value = book.format || "Book";
+    tags.value = book.tags || "";
+    rating.value = book.rating || "";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ---------------- Display Books ----------------
+function displayBooks() {
+    const month = monthSelect.value;
+    const grid = document.getElementById("bookGrid");
+    grid.innerHTML = "";
+
+    const books = getBooks();
+    const filtered = books.filter(b => b.month === month);
+
+    filtered.forEach((book) => {
+        const realIndex = books.findIndex(b =>
+            b.month === book.month &&
+            b.title === book.title &&
+            b.author === book.author &&
+            b.started === book.started &&
+            b.ended === book.ended &&
+            b.format === book.format &&
+            b.published === book.published
+        );
+
+        const card = document.createElement("div");
+        card.className = "book-card";
+
+        const days = parseDays(book.started, book.ended);
+        const isAudio = (book.format || "").toLowerCase() === "audio";
+        const lengthLine = isAudio ? `Audio Length: ${book.audioLength || "-"}<br>` : "";
+        const formatText = book.format || "Book";
+
+        card.innerHTML = `
+            <img src="${book.cover || ''}" alt="${book.title}">
+            <div class="book-details">
+                <strong>${book.title}</strong><br>
+                Author: ${book.author || "-"}<br>
+                Published: ${book.published || "-"}<br>
+                Pages: ${book.pages || 0}<br>
+                ${lengthLine}
+                Reading Span: ${days}<br>
+                Started: ${book.started || "-"}<br>
+                Ended: ${book.ended || "-"}<br>
+                Format: ${formatText}<br>
+                Genres: ${book.tags || "-"}<br>
+                Rating: ${book.rating || 0} ★<br>
+                <span class="format-badge ${getFormatClass(book.format)}">${formatText}</span>
+            </div>
+            <div class="book-controls">
+                <button class="edit-btn" style="background:#2980b9;">Edit</button>
+                <button class="delete-btn" style="background:#c0392b;">Delete</button>
+            </div>
+        `;
+
+        card.querySelector(".edit-btn").addEventListener("click", () => editBook(book, realIndex));
+        card.querySelector(".delete-btn").addEventListener("click", () => {
+            if (confirm("Delete this book?")) deleteBook(realIndex);
+        });
+
+        grid.appendChild(card);
+    });
+
+    calculateStats();
+}
+
+function deleteBook(index) {
+    let books = getBooks();
+    books.splice(index, 1);
+    saveBooks(books);
+    displayBooks();
+}
+
+// ---------------- Stats ----------------
+function calculateStats() {
+    const month = monthSelect.value;
+    const books = getBooks().filter(b => b.month === month);
+
+    let totalPages = 0;
+    let totalAudioMinutes = 0;
+    let totalDays = 0;
+    let totalRating = 0;
+    let finishedCount = 0;
+    let inProgressCount = 0;
+
+    let totalBooks = 0;
+    let totalAudio = 0;
+    let totalEbooks = 0;
+    let totalPublished = 0;
+    const publishedYears = {};
+
+    books.forEach(book => {
+        totalPages += Number(book.pages || 0);
+        totalAudioMinutes += parseAudioLengthToMinutes(book.audioLength);
+        totalRating += Number(book.rating || 0);
+
+        const days = parseDays(book.started, book.ended);
+        if (days !== "-") totalDays += days;
+
+        if (book.ended) finishedCount++;
+        else if (book.started && !book.ended) inProgressCount++;
+
+        const bookFormat = (book.format || "").trim().toLowerCase();
+        if (bookFormat === "book") totalBooks++;
+        else if (bookFormat === "audio") totalAudio++;
+        else if (bookFormat === "ebook") totalEbooks++;
+
+        if ((book.published || "").trim() !== "") {
+            totalPublished++;
+            const year = extractPublishedYear(book.published);
+            if (year) {
+                publishedYears[year] = (publishedYears[year] || 0) + 1;
+            }
+        }
+    });
+
+    const avgRating = books.length ? (totalRating / books.length).toFixed(2) : "0.00";
+
+    const publishedBreakdown = Object.keys(publishedYears)
+        .sort((a, b) => Number(a) - Number(b))
+        .map(year => `${year}: ${publishedYears[year]}`)
+        .join(" | ");
+
+    stats.innerHTML = `
+        <div class="stat-line"><strong>Total Entries:</strong> ${books.length}</div>
+        <div class="stat-line"><strong>Finished:</strong> ${finishedCount} | <strong>In Progress:</strong> ${inProgressCount}</div>
+        <div class="stat-line"><strong>Books:</strong> ${totalBooks} | <strong>Audio:</strong> ${totalAudio} | <strong>Ebooks:</strong> ${totalEbooks}</div>
+        <div class="stat-line"><strong>Published Count:</strong> ${totalPublished}</div>
+        <div class="stat-line"><strong>Total Pages:</strong> ${totalPages}</div>
+        <div class="stat-line"><strong>Total Audio Length:</strong> ${formatMinutes(totalAudioMinutes)}</div>
+        <div class="stat-line"><strong>Total Reading Days:</strong> ${totalDays} day(s)</div>
+        <div class="stat-line"><strong>Average Rating:</strong> ${avgRating}</div>
+        <div class="published-line"><strong>Published Years:</strong> ${publishedBreakdown || "No published dates entered"}</div>
+    `;
+}
+
+// ---------------- PDF Export ----------------
+document.getElementById("exportPdfBtn").onclick = function () {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const selectedMonth = monthSelect.value;
+    const allMonths = getMonths();
+    const monthLabel = (allMonths.find(m => m.value === selectedMonth) || {}).label || selectedMonth;
+    const books = getBooks();
+    const filtered = books.filter(b => b.month === selectedMonth);
+
+    let y = 20;
+    const pageHeight = doc.internal.pageSize.height;
+
+    doc.setFontSize(18);
+    doc.text(`Monthly Reading Report - ${monthLabel}`, 14, 14);
+
+    let totalPages = 0;
+    let totalAudioMinutes = 0;
+    let totalDays = 0;
+    let totalRating = 0;
+    let totalBooks = 0;
+    let totalAudio = 0;
+    let totalEbooks = 0;
+    let totalPublished = 0;
+    const publishedYears = {};
+
+    filtered.forEach((book, i) => {
+        const isAudio = (book.format || "").toLowerCase() === "audio";
+        const cardHeight = isAudio ? 54 : 48;
+
+        if (y + cardHeight > pageHeight - 25) {
+            doc.addPage();
+            y = 20;
+        }
+
+        if (book.cover) {
+            try {
+                doc.addImage(book.cover, "JPEG", 14, y, 24, 34);
+            } catch {
+                try {
+                    doc.addImage(book.cover, "PNG", 14, y, 24, 34);
+                } catch (e) {}
+            }
+        }
+
+        const textX = book.cover ? 44 : 14;
+        const days = parseDays(book.started, book.ended);
+
+        if (days !== "-") totalDays += days;
+        totalPages += Number(book.pages || 0);
+        totalAudioMinutes += parseAudioLengthToMinutes(book.audioLength);
+        totalRating += Number(book.rating || 0);
+
+        const bookFormat = (book.format || "").trim().toLowerCase();
+        if (bookFormat === "book") totalBooks++;
+        else if (bookFormat === "audio") totalAudio++;
+        else if (bookFormat === "ebook") totalEbooks++;
+
+        if ((book.published || "").trim() !== "") {
+            totalPublished++;
+            const year = extractPublishedYear(book.published);
+            if (year) {
+                publishedYears[year] = (publishedYears[year] || 0) + 1;
+            }
+        }
+
+        const formatIcon = isAudio ? "🎧" : (bookFormat === "ebook" ? "📱" : "📖");
+
+        const details =
+            `Author: ${book.author || "-"}\n` +
+            `Published: ${book.published || "-"}\n` +
+            `Pages: ${book.pages || 0}\n` +
+            (isAudio ? `Audio Length: ${book.audioLength || "-"}\n` : "") +
+            `Reading Span: ${days}\n` +
+            `Started: ${book.started || "-"}\n` +
+            `Ended: ${book.ended || "-"}\n` +
+            `Format: ${book.format || "-"}\n` +
+            `Genres: ${book.tags || "-"}`;
+
+        doc.setFontSize(12);
+        doc.text(`${i + 1}. ${formatIcon} ${book.title}`, textX, y + 6);
+        doc.setFontSize(10);
+        doc.text(details, textX, y + 12);
+        doc.text(`Rating: ${book.rating || 0}/5`, textX, y + (isAudio ? 44 : 38));
+
+        y += cardHeight;
+    });
+
+    const avgRating = filtered.length ? (totalRating / filtered.length).toFixed(2) : "0.00";
+    const publishedBreakdown = Object.keys(publishedYears)
+        .sort((a, b) => Number(a) - Number(b))
+        .map(year => `${year}: ${publishedYears[year]}`)
+        .join(" | ");
+
+    if (y + 50 > pageHeight - 20) {
+        doc.addPage();
+        y = 20;
+    }
+
+    doc.setFontSize(12);
+    doc.text("Summary", 14, y + 6);
+    doc.setFontSize(10);
+    const summaryLines = [
+        `Total Entries: ${filtered.length}`,
+        `Books: ${totalBooks} | Audio: ${totalAudio} | Ebooks: ${totalEbooks}`,
+        `Published Count: ${totalPublished}`,
+        `Total Pages: ${totalPages}`,
+        `Total Audio Length: ${formatMinutes(totalAudioMinutes)}`,
+        `Total Reading Days: ${totalDays}`,
+        `Average Rating: ${avgRating}`,
+        `Published Years: ${publishedBreakdown || "No published dates entered"}`
+    ];
+    doc.text(summaryLines, 14, y + 14);
+
+    doc.save(`Reading_Report_${selectedMonth}.pdf`);
+};
+
+// ---------------- Init ----------------
+monthSelect.addEventListener("change", displayBooks);
+
+loadMonths();
+displayBooks();
+</script>
+</body>
+</html>
