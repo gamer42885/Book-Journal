@@ -26,6 +26,7 @@ body { margin:0; font-family: Arial, sans-serif; background:#f4f4f4; color:#000;
 .topnav a:hover::after { width: 80%; }
 
 .container { padding:20px; }
+
 button {
   padding:8px 12px; background:#04AA6D; color:white; border:none;
   cursor:pointer; margin:10px 0; border-radius: 8px;
@@ -232,10 +233,18 @@ input[type=text], select, input[type=file] {
   color: #1b5e20;
 }
 
-.form-actions {
+/* NEW: series form button row */
+.series-form-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.series-form-actions button {
+  margin: 0;
+  min-width: 160px;
 }
 
 #cancelSeriesEditBtn {
@@ -250,6 +259,16 @@ input[type=text], select, input[type=file] {
 
 @media(max-width:500px){
   .book-card { font-size:14px; }
+
+  .series-form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .series-form-actions button {
+    width: 100%;
+    min-width: 0;
+  }
 }
 </style>
 </head>
@@ -270,8 +289,9 @@ input[type=text], select, input[type=file] {
     <input type="text" id="seriesName" placeholder="Series Name">
     <input type="text" id="seriesAuthor" placeholder="Author" required>
     <div id="bookInputs"></div>
-    <button type="button" id="addBookBtn">+ Add Another Book</button>
-    <div class="form-actions">
+
+    <div class="series-form-actions">
+      <button type="button" id="addBookBtn">+ Add Another Book</button>
       <button type="submit" id="submitSeriesBtn">Add Series</button>
       <button type="button" id="cancelSeriesEditBtn">Cancel Edit</button>
     </div>
@@ -1021,19 +1041,6 @@ async function addBookInline(s, container) {
     data[s].books.push({ title, cover, format });
   }
 
-  saveSeriesData(data);
-  renderCards();
-}
-
-let dragged = null;
-function dragStart(e, s, b) { dragged = { s, b }; }
-function allowDrop(e) { e.preventDefault(); }
-function dropBook(e, s, target) {
-  e.preventDefault();
-  if (!dragged || dragged.s !== s) return;
-  const data = getSeriesData();
-  const book = data[s].books.splice(dragged.b, 1)[0];
-  data[s].books.splice(target, 0, book);
   saveSeriesData(data);
   renderCards();
 }
