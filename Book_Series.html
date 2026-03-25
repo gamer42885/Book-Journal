@@ -75,7 +75,7 @@ button:hover { opacity:0.9; }
 
 .book-input-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1.4fr auto;
+  grid-template-columns: 2fr 1fr 1.4fr auto auto;
   gap: 8px;
   align-items: start;
 }
@@ -107,9 +107,14 @@ button:hover { opacity:0.9; }
   color: #555;
 }
 
-.lookupBtn {
+.lookupBtn,
+.notFoundBtn {
   white-space: nowrap;
   margin: 0;
+}
+
+.notFoundBtn {
+  background: #757575;
 }
 
 input[type=text], select, input[type=file] {
@@ -222,7 +227,7 @@ input[type=text], select, input[type=file] {
 
 @media(max-width:700px){
   .book-input-row { grid-template-columns: 1fr; }
-  .lookupBtn { width: 100%; }
+  .lookupBtn, .notFoundBtn { width: 100%; }
 }
 
 @media(max-width:500px){
@@ -551,6 +556,22 @@ async function searchOpenLibrary(bookDiv) {
   }
 }
 
+function markBookNotFound(bookDiv) {
+  const titleInput = bookDiv.querySelector('.bookTitle');
+  const title = titleInput.value.trim();
+
+  if (!title) {
+    showMessage(bookDiv, 'Enter a book title first.');
+    return;
+  }
+
+  bookDiv.dataset.cover = '';
+  bookDiv.dataset.author = '';
+  updatePreview(bookDiv, '', 'Manual entry selected • No API match');
+  closeDropdown(bookDiv);
+  showMessage(bookDiv, `"${title}" saved as manual entry.`, 'success');
+}
+
 function clearBookInput(bookDiv) {
   bookDiv.querySelector('.bookTitle').value = '';
   bookDiv.querySelector('.bookFormat').value = 'Book';
@@ -577,6 +598,7 @@ function createBookInput() {
       </select>
       <input type="file" accept="image/*" class="bookCover">
       <button type="button" class="lookupBtn">Lookup</button>
+      <button type="button" class="notFoundBtn">Book Not Found</button>
     </div>
     <div class="input-preview-row">
       <img class="coverPreview" alt="Cover preview">
@@ -586,9 +608,11 @@ function createBookInput() {
 
   const fileInput = div.querySelector('.bookCover');
   const lookupBtn = div.querySelector('.lookupBtn');
+  const notFoundBtn = div.querySelector('.notFoundBtn');
   const titleInput = div.querySelector('.bookTitle');
 
   lookupBtn.addEventListener('click', () => searchOpenLibrary(div));
+  notFoundBtn.addEventListener('click', () => markBookNotFound(div));
 
   let debounceTimer;
   titleInput.addEventListener('input', () => {
@@ -946,7 +970,6 @@ document.addEventListener('click', (e) => {
     }
   });
 });
-
 
 document.addEventListener('DOMContentLoaded', () => { renderCards(); });
 </script>
