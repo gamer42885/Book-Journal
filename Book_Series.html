@@ -266,10 +266,39 @@ function autofillSeriesAuthor(bookDiv, authorName) {
   }
 }
 
+function showMessage(bookDiv, text, type = 'error') {
+  if (!bookDiv) return;
+
+  let msg = bookDiv.querySelector('.lookup-message');
+  if (!msg) {
+    msg = document.createElement('div');
+    msg.className = 'lookup-message';
+    bookDiv.appendChild(msg);
+  }
+
+  msg.textContent = text || '';
+  msg.classList.remove('show', 'success');
+  if (type === 'success') msg.classList.add('success');
+
+  if (!text) {
+    msg.classList.remove('show');
+    return;
+  }
+
+  msg.classList.add('show');
+
+  clearTimeout(msg._hideTimer);
+  msg._hideTimer = setTimeout(() => {
+    msg.classList.remove('show');
+  }, 3000);
+}
+
 function closeDropdown(bookDiv) {
   const resultsBox = bookDiv.querySelector('.searchResults');
   if (resultsBox) {
     resultsBox.innerHTML = '';
+  const msg = bookDiv.querySelector('.lookup-message');
+  if (msg) msg.classList.remove('show');
     resultsBox.style.display = 'none';
   }
 }
@@ -360,7 +389,7 @@ async function searchOpenLibrary(bookDiv) {
 
     if (!data.docs || !data.docs.length) {
       closeDropdown(bookDiv);
-      alert('No book found.');
+      showMessage(bookDiv, 'No book found.');
       return;
     }
 
@@ -368,7 +397,7 @@ async function searchOpenLibrary(bookDiv) {
   } catch (err) {
     console.error(err);
     closeDropdown(bookDiv);
-    alert('Lookup failed. Your browser may be blocking the request or the API may be unavailable.');
+    showMessage(bookDiv, 'Lookup failed.');
   } finally {
     lookupBtn.textContent = originalText;
     lookupBtn.disabled = false;
@@ -637,7 +666,10 @@ async function addBookInline(s, container) {
   const fileInput = bookDiv.querySelector('.bookCover');
   const title = titleInput.value.trim();
 
-  if (!title) return alert('Enter a book title.');
+  if (!title) {
+    showMessage(bookDiv, 'Enter a book title.');
+    return;
+  }
 
   const format = formatSelect.value;
   const lookupCover = bookDiv.dataset.cover || '';
