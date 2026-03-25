@@ -108,6 +108,17 @@ input[type=text], select, input[type=file] {
 .add-book-inline button { background: #04AA6D; color:white; border:none; cursor:pointer; }
 .add-book-inline button:hover { opacity:0.9; }
 
+.edit-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.cancel-edit-btn {
+  background: #757575 !important;
+}
+
 .searchResults {
   position: absolute;
   top: calc(100% - 8px);
@@ -188,7 +199,7 @@ input[type=text], select, input[type=file] {
 
   <form id="addSeriesForm">
     <h3>Add New Series</h3>
-    <input type="text" id="seriesName" placeholder="Series Name" required>
+    <input type="text" id="seriesName" placeholder="Series Name">
     <input type="text" id="seriesAuthor" placeholder="Author" required>
     <div id="bookInputs"></div>
     <button type="button" id="addBookBtn">+ Add Another Book</button>
@@ -230,6 +241,7 @@ function getCheckboxState(){ return JSON.parse(localStorage.getItem('checkboxSta
 function saveCheckboxState(state){ localStorage.setItem('checkboxState', JSON.stringify(state)); }
 
 let currentFormatFilter = "All";
+let editingBook = null;
 
 function setFormatFilter(format){
   currentFormatFilter = format;
@@ -252,7 +264,7 @@ function updatePreview(bookDiv, coverUrl, noteText = "API cover selected") {
   } else {
     preview.removeAttribute('src');
     preview.style.display = 'none';
-    note.textContent = noteText || '';
+    note.textContent = noteText;
   }
 }
 
@@ -297,8 +309,8 @@ function closeDropdown(bookDiv) {
   const resultsBox = bookDiv.querySelector('.searchResults');
   if (resultsBox) {
     resultsBox.innerHTML = '';
-  const msg = bookDiv.querySelector('.lookup-message');
-  if (msg) msg.classList.remove('show');
+    const msg = bookDiv.querySelector('.lookup-message');
+    if (msg) msg.classList.remove('show');
     resultsBox.style.display = 'none';
   }
 }
@@ -402,6 +414,16 @@ async function searchOpenLibrary(bookDiv) {
     lookupBtn.textContent = originalText;
     lookupBtn.disabled = false;
   }
+}
+
+function clearBookInput(bookDiv) {
+  bookDiv.querySelector('.bookTitle').value = '';
+  bookDiv.querySelector('.bookFormat').value = 'Book';
+  bookDiv.querySelector('.bookCover').value = '';
+  bookDiv.dataset.cover = '';
+  bookDiv.dataset.author = '';
+  updatePreview(bookDiv, '', '');
+  closeDropdown(bookDiv);
 }
 
 function createBookInput() {
@@ -568,6 +590,7 @@ function renderCards() {
         <div class="book-controls">
           <label><input type="checkbox" id="${haveId}" ${state[haveId] ? "checked" : ""} onchange="updateCheckbox('${haveId}')">Have</label>
           <label><input type="checkbox" id="${readId}" ${state[readId] ? "checked" : ""} onchange="handleRead('${readId}','${haveId}')">Read</label>
+          <button type="button" onclick="startEditBook(${sIndex},${bIndex})">Edit</button>
           <button type="button" onclick="deleteBook(${sIndex},${bIndex})">Delete</button>
         </div>
       `;
@@ -575,13 +598,46 @@ function renderCards() {
     });
 
     const inlineForm = card.querySelector('.add-book-inline');
-    inlineForm.appendChild(createBookInput());
+    const bookInput = createBookInput();
+    inlineForm.appendChild(bookInput);
+
+    const actions = document.createElement('div');
+    actions.className = 'edit-actions';
 
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
     addBtn.textContent = 'Add Book';
+    addBtn.className = 'save-book-btn';
     addBtn.onclick = () => addBookInline(sIndex, inlineForm);
-    inlineForm.appendChild(addBtn);
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.textContent = 'Cancel Edit';
+    cancelBtn.className = 'cancel-edit-btn';
+    cancelBtn.style.display = 'none';
+    cancelBtn.onclick = () => cancelEdit(inlineForm);
+
+    actions.appendChild(addBtn);
+    actions.appendChild(cancelBtn);
+    inlineForm.appendChild(actions);
+
+    if (editingBook && editingBook.seriesIndex === sIndex) {
+      const editBook = data[sIndex].books[editingBook.bookIndex];
+      if (editBook) {
+        const titleInput = bookInput.querySelector('.bookTitle');
+        const formatSelect = bookInput.querySelector('.bookFormat');
+        titleInput.value = editBook.title || '';
+        formatSelect.value = editBook.format || 'Book';
+        bookInput.dataset.cover = editBook.cover || '';
+        if (editBook.cover) {
+          updatePreview(bookInput, editBook.cover, 'Current cover');
+        } else {
+          updatePreview(bookInput, '', '');
+        }
+        addBtn.textContent = 'Save Changes';
+        cancelBtn.style.display = 'inline-block';
+      }
+    }
 
     grid.appendChild(card);
   });
@@ -645,10 +701,31 @@ function updateCounters() {
   document.getElementById('totalBooksAudio').textContent = countAudio;
 }
 
+function startEditBook(seriesIndex, bookIndex) {
+  editingBook = { seriesIndex, bookIndex };
+  renderCards();
+}
+
+function cancelEdit(container) {
+  editingBook = null;
+  const bookDiv = container.querySelector('.book-input');
+  if (bookDiv) clearBookInput(bookDiv);
+  renderCards();
+}
+
 function deleteBook(s, b) {
   const data = getSeriesData();
   data[s].books.splice(b, 1);
   saveSeriesData(data);
+
+  if (editingBook && editingBook.seriesIndex === s) {
+    if (editingBook.bookIndex === b) {
+      editingBook = null;
+    } else if (editingBook.bookIndex > b) {
+      editingBook.bookIndex--;
+    }
+  }
+
   renderCards();
 }
 
@@ -656,6 +733,15 @@ function removeSeries(s) {
   const data = getSeriesData();
   data.splice(s, 1);
   saveSeriesData(data);
+
+  if (editingBook) {
+    if (editingBook.seriesIndex === s) {
+      editingBook = null;
+    } else if (editingBook.seriesIndex > s) {
+      editingBook.seriesIndex--;
+    }
+  }
+
   renderCards();
 }
 
@@ -686,7 +772,14 @@ async function addBookInline(s, container) {
   }
 
   const data = getSeriesData();
-  data[s].books.push({ title, cover, format });
+
+  if (editingBook && editingBook.seriesIndex === s) {
+    data[s].books[editingBook.bookIndex] = { title, cover, format };
+    editingBook = null;
+  } else {
+    data[s].books.push({ title, cover, format });
+  }
+
   saveSeriesData(data);
   renderCards();
 }
