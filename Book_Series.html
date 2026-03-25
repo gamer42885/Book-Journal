@@ -233,21 +233,24 @@ input[type=text], select, input[type=file] {
   color: #1b5e20;
 }
 
-/* NEW: series form button row */
+/* Equal-width top form buttons */
 .series-form-actions {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: stretch;
   margin-top: 6px;
 }
 
-.series-form-actions button {
+.series-form-actions #addBookBtn,
+.series-form-actions #submitSeriesBtn {
+  flex: 1 1 0;
+  min-width: 0;
   margin: 0;
-  min-width: 160px;
 }
 
-#cancelSeriesEditBtn {
+.series-form-actions #cancelSeriesEditBtn {
+  margin: 0;
   background: #757575;
   display: none;
 }
@@ -265,9 +268,11 @@ input[type=text], select, input[type=file] {
     align-items: stretch;
   }
 
-  .series-form-actions button {
+  .series-form-actions #addBookBtn,
+  .series-form-actions #submitSeriesBtn,
+  .series-form-actions #cancelSeriesEditBtn {
     width: 100%;
-    min-width: 0;
+    flex: none;
   }
 }
 </style>
