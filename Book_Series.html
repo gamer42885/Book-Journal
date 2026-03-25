@@ -150,6 +150,13 @@ input[type=text], select, input[type=file] {
   background: #757575 !important;
 }
 
+.series-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
 .searchResults {
   position: absolute;
   top: calc(100% - 8px);
@@ -225,6 +232,17 @@ input[type=text], select, input[type=file] {
   color: #1b5e20;
 }
 
+.form-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#cancelSeriesEditBtn {
+  background: #757575;
+  display: none;
+}
+
 @media(max-width:700px){
   .book-input-row { grid-template-columns: 1fr; }
   .lookupBtn, .notFoundBtn { width: 100%; }
@@ -248,12 +266,15 @@ input[type=text], select, input[type=file] {
   <h2>Book Series</h2>
 
   <form id="addSeriesForm">
-    <h3>Add New Series</h3>
+    <h3 id="seriesFormTitle">Add New Series</h3>
     <input type="text" id="seriesName" placeholder="Series Name">
     <input type="text" id="seriesAuthor" placeholder="Author" required>
     <div id="bookInputs"></div>
     <button type="button" id="addBookBtn">+ Add Another Book</button>
-    <button type="submit">Add Series</button>
+    <div class="form-actions">
+      <button type="submit" id="submitSeriesBtn">Add Series</button>
+      <button type="button" id="cancelSeriesEditBtn">Cancel Edit</button>
+    </div>
   </form>
 
   <h3>Overall Totals</h3>
@@ -292,6 +313,7 @@ function saveCheckboxState(state){ localStorage.setItem('checkboxState', JSON.st
 
 let currentFormatFilter = "All";
 let editingBook = null;
+let editingSeries = null;
 
 function setFormatFilter(format){
   currentFormatFilter = format;
@@ -646,6 +668,40 @@ function createBookInput() {
   return div;
 }
 
+function resetSeriesForm() {
+  editingSeries = null;
+  document.getElementById('addSeriesForm').reset();
+  document.getElementById('bookInputs').innerHTML = "";
+  document.getElementById('bookInputs').appendChild(createBookInput());
+  document.getElementById('seriesFormTitle').textContent = 'Add New Series';
+  document.getElementById('submitSeriesBtn').textContent = 'Add Series';
+  document.getElementById('cancelSeriesEditBtn').style.display = 'none';
+}
+
+function startEditSeries(seriesIndex) {
+  const data = getSeriesData();
+  const series = data[seriesIndex];
+  if (!series) return;
+
+  editingSeries = seriesIndex;
+  editingBook = null;
+
+  document.getElementById('seriesName').value = series.name || '';
+  document.getElementById('seriesAuthor').value = series.author || '';
+  document.getElementById('bookInputs').innerHTML = "";
+  document.getElementById('bookInputs').appendChild(createBookInput());
+
+  document.getElementById('seriesFormTitle').textContent = 'Edit Series';
+  document.getElementById('submitSeriesBtn').textContent = 'Save Series Changes';
+  document.getElementById('cancelSeriesEditBtn').style.display = 'inline-block';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('cancelSeriesEditBtn').addEventListener('click', () => {
+  resetSeriesForm();
+});
+
 document.getElementById('bookInputs').appendChild(createBookInput());
 
 document.getElementById('addBookBtn').addEventListener('click', () => {
@@ -680,12 +736,20 @@ document.getElementById('addSeriesForm').addEventListener('submit', async e => {
   }
 
   const data = getSeriesData();
-  data.push({ name, author, books });
-  saveSeriesData(data);
 
-  document.getElementById('addSeriesForm').reset();
-  document.getElementById('bookInputs').innerHTML = "";
-  document.getElementById('bookInputs').appendChild(createBookInput());
+  if (editingSeries !== null) {
+    data[editingSeries].name = name;
+    data[editingSeries].author = author;
+
+    if (books.length) {
+      data[editingSeries].books = books;
+    }
+  } else {
+    data.push({ name, author, books });
+  }
+
+  saveSeriesData(data);
+  resetSeriesForm();
   renderCards();
 });
 
@@ -729,7 +793,10 @@ function renderCards() {
       <div class="series-info">
         <strong>${highlightMatch(series.name)}</strong><br>${highlightMatch(series.author)}
         <span class="series-counter"></span><br>
-        <button type="button" onclick="removeSeries(${sIndex})">Remove Series</button>
+        <div class="series-actions">
+          <button type="button" onclick="startEditSeries(${sIndex})">Edit Series</button>
+          <button type="button" onclick="removeSeries(${sIndex})">Remove Series</button>
+        </div>
       </div>
       <div class="book-grid" id="book-grid-${sIndex}"></div>
       <div class="add-book-inline" style="margin-top:10px;"></div>
@@ -908,6 +975,14 @@ function removeSeries(s) {
     }
   }
 
+  if (editingSeries !== null) {
+    if (editingSeries === s) {
+      resetSeriesForm();
+    } else if (editingSeries > s) {
+      editingSeries--;
+    }
+  }
+
   renderCards();
 }
 
@@ -971,7 +1046,9 @@ document.addEventListener('click', (e) => {
   });
 });
 
-document.addEventListener('DOMContentLoaded', () => { renderCards(); });
+document.addEventListener('DOMContentLoaded', () => {
+  renderCards();
+});
 </script>
 </body>
 </html>
