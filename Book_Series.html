@@ -76,7 +76,7 @@ button:hover { opacity:0.9; }
 
 .book-input-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1.4fr auto auto;
+  grid-template-columns: 2fr 1fr 1.4fr auto auto auto;
   gap: 8px;
   align-items: start;
 }
@@ -112,6 +112,10 @@ button:hover { opacity:0.9; }
 .notFoundBtn {
   white-space: nowrap;
   margin: 0;
+}
+
+.googleBtn {
+  background: #1a73e8;
 }
 
 .notFoundBtn {
@@ -212,6 +216,17 @@ input[type=text], select, input[type=file] {
 .dropdown-meta {
   font-size: 12px;
   color: #666;
+}
+
+.dropdown-source {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #eef3ff;
+  color: #1a4fb5;
+  font-weight: 600;
 }
 
 .lookup-message {
@@ -334,6 +349,7 @@ input[type=text], select, input[type=file] {
 function getSeriesData(){ return JSON.parse(localStorage.getItem('seriesData') || '[]'); }
 function saveSeriesData(data){ localStorage.setItem('seriesData', JSON.stringify(data)); }
 function getCheckboxState(){ return JSON.parse(localStorage.getItem('checkboxState') || '{}'); }
+
 function saveCheckboxState(state){ localStorage.setItem('checkboxState', JSON.stringify(state)); }
 
 let currentFormatFilter = "All";
@@ -428,15 +444,20 @@ function getBookSearchTerms(bookDiv) {
   return { title, manualAuthor, seriesName };
 }
 
-function getResultScore(book, searchTerms) {
-  const title = (book.title || '').toLowerCase();
-  const authors = ((book.author_name || []).join(' ')).toLowerCase();
-  const series = ((book.series || []).join(' ')).toLowerCase();
-  const firstSentence = ((book.first_sentence || []).join(' ')).toLowerCase();
 
-  const searchTitle = (searchTerms.title || '').toLowerCase();
-  const searchAuthor = (searchTerms.manualAuthor || '').toLowerCase();
-  const searchSeries = (searchTerms.seriesName || '').toLowerCase();
+function normalizeText(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getOpenLibraryScore(book, searchTerms) {
+  const title = normalizeText(book.title);
+  const authors = normalizeText((book.author_name || []).join(' '));
+  const series = normalizeText((book.series || []).join(' '));
+  const firstSentence = normalizeText((book.first_sentence || []).join(' '));
+
+  const searchTitle = normalizeText(searchTerms.title);
+  const searchAuthor = normalizeText(searchTerms.manualAuthor);
+  const searchSeries = normalizeText(searchTerms.seriesName);
 
   let score = 0;
 
@@ -463,35 +484,81 @@ function getResultScore(book, searchTerms) {
   return score;
 }
 
+function getGoogleBooksScore(book, searchTerms) {
+  const info = book.volumeInfo || {};
+  const title = normalizeText(info.title);
+  const subtitle = normalizeText(info.subtitle);
+  const authors = normalizeText((info.authors || []).join(' '));
+  const series = normalizeText(info.seriesInfo?.bookDisplayNumber || info.seriesInfo?.seriesBookType || '');
+  const categories = normalizeText((info.categories || []).join(' '));
+
+  const searchTitle = normalizeText(searchTerms.title);
+  const searchAuthor = normalizeText(searchTerms.manualAuthor);
+  const searchSeries = normalizeText(searchTerms.seriesName);
+
+  let score = 0;
+
+  if (searchTitle) {
+    if (title === searchTitle) score += 120;
+    else if (title.startsWith(searchTitle)) score += 80;
+    else if (`${title} ${subtitle}`.includes(searchTitle)) score += 50;
+  }
+
+  if (searchAuthor) {
+    if (authors === searchAuthor) score += 70;
+    else if (authors.includes(searchAuthor)) score += 40;
+  }
+
+  if (searchSeries) {
+    if (series.includes(searchSeries)) score += 35;
+    else if (categories.includes(searchSeries)) score += 10;
+  }
+
+  if (info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail) score += 8;
+  if (info.publishedDate) score += 3;
+  if (info.averageRating) score += 2;
+
+  return score;
+}
+
+function dedupeResults(results) {
+  const seen = new Set();
+  return results.filter(item => {
+    const key = `${normalizeText(item.title)}|${normalizeText(item.author)}|${normalizeText(item.sourceKey || '')}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+
 function selectBookResult(bookDiv, book) {
   const titleInput = bookDiv.querySelector('.bookTitle');
-  const authorName = (book.author_name && book.author_name.length) ? book.author_name[0] : '';
-  const coverUrl = book.cover_i
-    ? `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg`
-    : '';
+  const coverUrl = book.cover || '';
 
   titleInput.value = book.title || titleInput.value.trim();
-  bookDiv.dataset.author = authorName || '';
+  bookDiv.dataset.author = book.author || '';
   bookDiv.dataset.cover = coverUrl || '';
 
-  autofillSeriesAuthor(bookDiv, authorName);
+  autofillSeriesAuthor(bookDiv, book.author || '');
 
   if (coverUrl) {
     updatePreview(
       bookDiv,
       coverUrl,
-      authorName ? `Cover found from Open Library • Author: ${authorName}` : 'Cover found from Open Library'
+      `${book.source || 'Search'} match selected${book.author ? ` • Author: ${book.author}` : ''}`
     );
   } else {
     updatePreview(
       bookDiv,
       '',
-      authorName ? `Author found: ${authorName} • No cover available` : 'Book found, but no cover available'
+      `${book.source || 'Search'} match selected${book.author ? ` • Author: ${book.author}` : ''} • No cover available`
     );
   }
 
   closeDropdown(bookDiv);
 }
+
 
 function showDropdown(bookDiv, docs) {
   const resultsBox = bookDiv.querySelector('.searchResults');
@@ -506,19 +573,17 @@ function showDropdown(bookDiv, docs) {
     const item = document.createElement('div');
     item.className = 'dropdown-item';
 
-    const cover = book.cover_i
-      ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`
-      : '';
-
-    const author = (book.author_name && book.author_name.length) ? book.author_name[0] : 'Unknown Author';
-    const year = book.first_publish_year ? ` • ${book.first_publish_year}` : '';
-    const seriesText = (book.series && book.series.length) ? ` • ${book.series[0]}` : '';
+    const cover = book.cover || '';
+    const author = book.author || 'Unknown Author';
+    const year = book.year ? ` • ${book.year}` : '';
+    const seriesText = book.series ? ` • ${book.series}` : '';
 
     item.innerHTML = `
       ${cover ? `<img src="${cover}" alt="${escapeHtml(book.title || 'Book cover')}" class="dropdown-cover">` : `<div class="dropdown-cover"></div>`}
       <div class="dropdown-text">
         <span class="dropdown-title">${escapeHtml(book.title || 'Untitled')}</span>
-        <span class="dropdown-meta">${escapeHtml(author)}${year}${seriesText ? ` • ${escapeHtml(book.series[0])}` : ''}</span>
+        <span class="dropdown-meta">${escapeHtml(author)}${year}${seriesText}</span>
+        <span class="dropdown-source">${escapeHtml(book.source || 'Search')}</span>
       </div>
     `;
 
@@ -529,6 +594,40 @@ function showDropdown(bookDiv, docs) {
   resultsBox.style.display = 'block';
 }
 
+async function searchGoogleBooks(searchTerms, maxResults = 40) {
+  const queryParts = [];
+  if (searchTerms.title) queryParts.push(`intitle:${searchTerms.title}`);
+  if (searchTerms.manualAuthor) queryParts.push(`inauthor:${searchTerms.manualAuthor}`);
+  if (searchTerms.seriesName) queryParts.push(searchTerms.seriesName);
+
+  if (!queryParts.length) return [];
+
+  const q = encodeURIComponent(queryParts.join(' '));
+  const url = `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=${Math.min(maxResults, 40)}&printType=books`;
+
+  const res = await fetch(url);
+  const data = await res.json();
+  const items = Array.isArray(data.items) ? data.items : [];
+
+  return items.map(item => {
+    const info = item.volumeInfo || {};
+    const imageLinks = info.imageLinks || {};
+    const cover = imageLinks.thumbnail || imageLinks.smallThumbnail || '';
+    return {
+      source: 'Google Books',
+      sourceKey: item.id || info.infoLink || info.previewLink || info.canonicalVolumeLink || '',
+      title: info.title || '',
+      author: (info.authors && info.authors.length) ? info.authors[0] : '',
+      year: info.publishedDate || '',
+      series: info.seriesInfo?.bookDisplayNumber || '',
+      cover: cover ? cover.replace('http://', 'https://') : '',
+      raw: item,
+      _score: getGoogleBooksScore(item, searchTerms)
+    };
+  });
+}
+
+
 async function searchOpenLibrary(bookDiv) {
   const { title, manualAuthor, seriesName } = getBookSearchTerms(bookDiv);
 
@@ -538,23 +637,28 @@ async function searchOpenLibrary(bookDiv) {
   }
 
   const lookupBtn = bookDiv.querySelector('.lookupBtn');
-  const originalText = lookupBtn.textContent;
-  lookupBtn.textContent = 'Loading...';
+  const googleBtn = bookDiv.querySelector('.googleBtn');
+  const originalLookupText = lookupBtn.textContent;
+  const originalGoogleText = googleBtn.textContent;
+  lookupBtn.textContent = 'Searching...';
+  googleBtn.textContent = 'Searching...';
   lookupBtn.disabled = true;
+  googleBtn.disabled = true;
 
-  const allResults = [];
-  const seenKeys = new Set();
   const limit = 100;
-  const maxResults = 500;
+  const maxResults = 200;
 
   try {
+    const searchTerms = { title, manualAuthor, seriesName };
     const queryPieces = [title, manualAuthor, seriesName].filter(Boolean);
     const fullQuery = encodeURIComponent(queryPieces.join(' '));
 
+    const allOpenLibrary = [];
+    const seenKeys = new Set();
     let page = 1;
     let totalFound = Infinity;
 
-    while (allResults.length < maxResults && allResults.length < totalFound) {
+    while (allOpenLibrary.length < maxResults && allOpenLibrary.length < totalFound) {
       const res = await fetch(`https://openlibrary.org/search.json?q=${fullQuery}&limit=${limit}&page=${page}`);
       const data = await res.json();
 
@@ -566,41 +670,70 @@ async function searchOpenLibrary(bookDiv) {
         const key = book.key || `${book.title || ''}-${(book.author_name || []).join(',')}-${(book.series || []).join(',')}-${book.first_publish_year || ''}`;
         if (!seenKeys.has(key)) {
           seenKeys.add(key);
-          allResults.push(book);
+          allOpenLibrary.push(book);
         }
-        if (allResults.length >= maxResults) break;
+        if (allOpenLibrary.length >= maxResults) break;
       }
 
       if (data.docs.length < limit) break;
       page++;
     }
 
-    if (!allResults.length) {
+    const openLibraryResults = allOpenLibrary.map(book => ({
+      source: 'Open Library',
+      sourceKey: book.key || '',
+      title: book.title || '',
+      author: (book.author_name && book.author_name.length) ? book.author_name[0] : '',
+      year: book.first_publish_year || '',
+      series: (book.series && book.series.length) ? book.series[0] : '',
+      cover: book.cover_i ? `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg` : '',
+      raw: book,
+      _score: getOpenLibraryScore(book, searchTerms)
+    }));
+
+    const googleResults = await searchGoogleBooks(searchTerms, 40).catch(() => []);
+
+    const mergedResults = dedupeResults(
+      [...openLibraryResults, ...googleResults]
+        .sort((a, b) => {
+          if (b._score !== a._score) return b._score - a._score;
+          return (a.title || '').localeCompare(b.title || '');
+        })
+    );
+
+    if (!mergedResults.length) {
       closeDropdown(bookDiv);
       showMessage(bookDiv, 'No book found.');
       return;
     }
 
-    const searchTerms = { title, manualAuthor, seriesName };
-
-    const rankedResults = allResults
-      .map(book => ({ ...book, _score: getResultScore(book, searchTerms) }))
-      .sort((a, b) => {
-        if (b._score !== a._score) return b._score - a._score;
-        return (a.title || '').localeCompare(b.title || '');
-      });
-
-    showDropdown(bookDiv, rankedResults);
-    showMessage(bookDiv, `${rankedResults.length.toLocaleString()} results loaded.`, 'success');
+    showDropdown(bookDiv, mergedResults);
+    showMessage(
+      bookDiv,
+      `${mergedResults.length.toLocaleString()} results loaded from Open Library + Google Books.`,
+      'success'
+    );
 
   } catch (err) {
     console.error(err);
     closeDropdown(bookDiv);
-    showMessage(bookDiv, 'Lookup failed.');
+    showMessage(bookDiv, 'Search failed.');
   } finally {
-    lookupBtn.textContent = originalText;
+    lookupBtn.textContent = originalLookupText;
+    googleBtn.textContent = originalGoogleText;
     lookupBtn.disabled = false;
+    googleBtn.disabled = false;
   }
+}
+
+function openGoogleSearch(bookDiv) {
+  const { title, manualAuthor, seriesName } = getBookSearchTerms(bookDiv);
+  const query = [title, manualAuthor, seriesName].filter(Boolean).join(' ');
+  if (!query) {
+    showMessage(bookDiv, 'Enter a book title first.');
+    return;
+  }
+  window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
 }
 
 function markBookNotFound(bookDiv) {
@@ -644,7 +777,8 @@ function createBookInput() {
         <option value="Audio">Audio</option>
       </select>
       <input type="file" accept="image/*" class="bookCover">
-      <button type="button" class="lookupBtn">Lookup</button>
+      <button type="button" class="lookupBtn">Search Books</button>
+      <button type="button" class="googleBtn">Google</button>
       <button type="button" class="notFoundBtn">Book Not Found</button>
     </div>
     <div class="input-preview-row">
@@ -655,10 +789,12 @@ function createBookInput() {
 
   const fileInput = div.querySelector('.bookCover');
   const lookupBtn = div.querySelector('.lookupBtn');
+  const googleBtn = div.querySelector('.googleBtn');
   const notFoundBtn = div.querySelector('.notFoundBtn');
   const titleInput = div.querySelector('.bookTitle');
 
   lookupBtn.addEventListener('click', () => searchOpenLibrary(div));
+  googleBtn.addEventListener('click', () => openGoogleSearch(div));
   notFoundBtn.addEventListener('click', () => markBookNotFound(div));
 
   let debounceTimer;
