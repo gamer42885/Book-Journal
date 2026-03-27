@@ -400,7 +400,29 @@ input[type=text], select, input[type=file] {
 }
 
 @media(max-width:900px){
-  .format-grid { grid-template-columns: 1fr; }
+  .format-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .format-item {
+    padding: 10px 6px;
+  }
+
+  .format-item h3 {
+    margin: 4px 0;
+    font-size: 18px;
+  }
+
+  .format-item p {
+    margin: 0;
+    font-size: 12px;
+  }
+
+  .icon {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
 }
 
 @media(max-width:700px){
@@ -1031,6 +1053,7 @@ document.getElementById('addSeriesForm').addEventListener('submit', async e => {
   const author = document.getElementById('seriesAuthor').value.trim();
   const bookDivs = document.querySelectorAll('#bookInputs .book-input');
   const books = [];
+
 
   for (let div of bookDivs) {
     const title = div.querySelector('.bookTitle').value.trim();
