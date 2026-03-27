@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reading Dashboard</title>
 <style>
-body { margin:0; font-family: Arial, sans-serif; background:#f4f4f4; color:#000; overflow-x:hidden; }
+body { margin:0; font-family: Arial, sans-serif; background:#f4f4f4; color:#000; }
 
 .topnav {
   background: linear-gradient(90deg, #4caf50, #2e7d32);
-  display: flex; justify-content: center; align-items: center; 
-  padding: 10px 20px; gap: 12px;
+  display: flex; justify-content: center; align-items: center;
+  padding: 10px 20px; gap: 20px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 12px;
   margin: 20px;
 }
@@ -19,10 +19,8 @@ body { margin:0; font-family: Arial, sans-serif; background:#f4f4f4; color:#000;
 .topnav a:hover { background: rgba(255,255,255,0.15); }
 .topnav a:hover::after { width: 80%; }
 
-.container{padding:30px; max-width:1200px; margin:0 auto}
+.container{padding:30px}
 .hero{text-align:center;margin-bottom:40px}
-
-h1, h2, h3, p { overflow-wrap:anywhere; }
 
 /* STAT CARDS */
 .format-card{
@@ -88,37 +86,6 @@ h1, h2, h3, p { overflow-wrap:anywhere; }
   cursor:pointer
 }
 .tab-button.active{background:#4caf50;color:#fff}
-
-@media (max-width: 700px){
-  .topnav {
-    justify-content: stretch;
-    margin: 12px;
-    padding: 10px;
-    gap: 8px;
-  }
-
-  .topnav a {
-    flex: 1 1 calc(50% - 8px);
-    min-width: 140px;
-    text-align: center;
-    padding: 12px 10px;
-  }
-
-  .container { padding: 16px; }
-  .hero { margin-bottom: 24px; }
-  .stats-grid, .reading-grid { gap: 14px; }
-  .format-grid { grid-template-columns: 1fr; }
-  .tab-button {
-    width: 100%;
-    margin: 0 0 8px 0;
-  }
-}
-
-@media (max-width: 500px){
-  .topnav a { flex-basis: 100%; }
-  .format-card, .reading-card { padding: 14px; }
-  .reading-card img { width: 88px; height: 132px; }
-}
 </style>
 </head>
 <body>
