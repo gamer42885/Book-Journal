@@ -11,6 +11,8 @@ body {
     background: #f4f4f4;
     color: #000;
 }
+
+/* Topnav */
 .topnav {
     background: linear-gradient(90deg, #4caf50, #2e7d32);
     display: flex;
@@ -48,9 +50,27 @@ body {
 .topnav a:hover::after { width: 80%; }
 
 .container {
-    padding: 20px;
+    padding: 30px;
     max-width: 1200px;
     margin: 0 auto;
+}
+
+.hero {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.hero h1 {
+    margin-bottom: 10px;
+}
+
+.hero p {
+    margin: 0;
+    color: #555;
+}
+
+.section {
+    margin-bottom: 30px;
 }
 
 button {
@@ -65,46 +85,68 @@ button {
 }
 button:hover { opacity: 0.92; }
 
+.format-card {
+    background: linear-gradient(135deg, #fff, #f1f8f4);
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+.format-header {
+    font-weight: 700;
+    margin-bottom: 15px;
+    opacity: 0.75;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
 .month-controls {
     display: flex;
     gap: 10px;
     align-items: center;
     flex-wrap: wrap;
-    margin-bottom: 20px;
 }
 .month-controls label { flex: 0 0 auto; }
 .month-controls select {
     flex: 1 1 220px;
-    padding: 8px;
+    padding: 10px;
     border-radius: 8px;
     border: 1px solid #ccc;
+    font-family: inherit;
 }
 .month-controls button { flex: 0 0 auto; }
+
+.form-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
 
 #bookForm {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
     gap: 10px 20px;
-    background: #fff;
-    padding: 16px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 #bookForm input,
 #bookForm select,
 #bookForm button {
-    padding: 8px;
+    padding: 10px;
     width: 100%;
     box-sizing: border-box;
     border-radius: 8px;
     border: 1px solid #ccc;
+    font-family: inherit;
+}
+#bookForm button {
+    border: none;
 }
 #cover, #bookForm button[type="submit"] {
     grid-column: span 2;
-}
-#bookForm button[type="submit"] {
-    border: none;
 }
 
 .stats-wrap {
@@ -113,11 +155,10 @@ button:hover { opacity: 0.92; }
     align-items: flex-start;
     gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 10px;
 }
 #stats {
     background: #fff;
-    padding: 14px 16px;
+    padding: 16px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     line-height: 1.7;
@@ -132,7 +173,7 @@ button:hover { opacity: 0.92; }
 .card-grid {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 .book-card {
     display: grid;
@@ -143,6 +184,11 @@ button:hover { opacity: 0.92; }
     border-radius: 14px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     padding: 12px;
+    transition: 0.2s ease;
+}
+.book-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.12);
 }
 .book-card img {
     width: 85px;
@@ -179,6 +225,7 @@ button:hover { opacity: 0.92; }
 .format-ebook { background: #d1c4e9; }
 
 @media(max-width:700px){
+    .container { padding: 20px; }
     #bookForm { grid-template-columns: 1fr; }
     #cover, #bookForm button[type="submit"] { grid-column: 1; }
 
@@ -206,50 +253,70 @@ button:hover { opacity: 0.92; }
 </div>
 
 <div class="container">
-    <h2>Monthly Book Tracker</h2>
-
-    <div class="month-controls">
-        <label for="monthSelect">Select Month:</label>
-        <select id="monthSelect"></select>
-        <button id="addMonthBtn">+ Add Month</button>
-        <button id="deleteMonthBtn" style="background:#c0392b;">Delete Month</button>
+    <div class="hero">
+        <h1>📚 Monthly Book Tracker</h1>
+        <p>Track your reading each month and keep the same dashboard style as the rest of your site.</p>
     </div>
 
-    <h3>Add / Edit Book</h3>
-    <form id="bookForm">
-        <input type="text" id="title" placeholder="Title" required>
-        <input type="text" id="author" placeholder="Author">
-        <input type="text" id="published" placeholder="Published">
-        <input type="number" id="pages" placeholder="Pages">
-        <input type="text" id="audioLength" placeholder="Audio Length (e.g. 10h 30m)">
-        <input type="date" id="dateStarted">
-        <input type="date" id="dateEnded">
-        <select id="format">
-            <option>Book</option>
-            <option>Ebook</option>
-            <option>Audio</option>
-        </select>
-        <input type="text" id="tags" placeholder="Genres (comma separated)">
-        <select id="rating">
-            <option value="">Select Rating</option>
-            <option value="1">1 ★</option>
-            <option value="2">2 ★★</option>
-            <option value="3">3 ★★★</option>
-            <option value="4">4 ★★★★</option>
-            <option value="5">5 ★★★★★</option>
-        </select>
-        <input type="file" id="cover" accept="image/*">
-        <button type="submit">Save Book</button>
-    </form>
-
-    <h3>Reading Stats & Export</h3>
-    <div class="stats-wrap">
-        <div id="stats"></div>
-        <button id="exportPdfBtn" style="background:#8e44ad;">📄 Export Month to PDF</button>
+    <div class="section">
+        <div class="format-card">
+            <div class="format-header">📅 Month Controls</div>
+            <div class="month-controls">
+                <label for="monthSelect">Select Month:</label>
+                <select id="monthSelect"></select>
+                <button id="addMonthBtn">+ Add Month</button>
+                <button id="deleteMonthBtn" style="background:#c0392b;">Delete Month</button>
+            </div>
+        </div>
     </div>
 
-    <h3>My Books</h3>
-    <div class="card-grid" id="bookGrid"></div>
+    <div class="section">
+        <div class="form-card">
+            <h3>Add / Edit Book</h3>
+            <form id="bookForm">
+                <input type="text" id="title" placeholder="Title" required>
+                <input type="text" id="author" placeholder="Author">
+                <input type="text" id="published" placeholder="Published">
+                <input type="number" id="pages" placeholder="Pages">
+                <input type="text" id="audioLength" placeholder="Audio Length (e.g. 10h 30m)">
+                <input type="date" id="dateStarted">
+                <input type="date" id="dateEnded">
+                <select id="format">
+                    <option>Book</option>
+                    <option>Ebook</option>
+                    <option>Audio</option>
+                </select>
+                <input type="text" id="tags" placeholder="Genres (comma separated)">
+                <select id="rating">
+                    <option value="">Select Rating</option>
+                    <option value="1">1 ★</option>
+                    <option value="2">2 ★★</option>
+                    <option value="3">3 ★★★</option>
+                    <option value="4">4 ★★★★</option>
+                    <option value="5">5 ★★★★★</option>
+                </select>
+                <input type="file" id="cover" accept="image/*">
+                <button type="submit">Save Book</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="format-card">
+            <div class="format-header">📊 Reading Stats & Export</div>
+            <div class="stats-wrap">
+                <div id="stats"></div>
+                <button id="exportPdfBtn" style="background:#8e44ad;">📄 Export Month to PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="format-card">
+            <div class="format-header">📚 My Books</div>
+            <div class="card-grid" id="bookGrid"></div>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
