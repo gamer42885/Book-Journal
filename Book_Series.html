@@ -795,24 +795,14 @@ function createBookInput() {
 
   lookupBtn.addEventListener('click', () => searchOpenLibrary(div));
   googleBtn.addEventListener('click', () => openGoogleSearch(div));
-  notFoundBtn.addEventListener('click', () => markBookNotFound(div));
-
-  let debounceTimer;
-  titleInput.addEventListener('input', () => {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      if (titleInput.value.trim()) {
-        searchOpenLibrary(div);
-      } else {
-        closeDropdown(div);
-      }
-    }, 350);
+  notFoundBtn.addEventListener('click', () => markBookNotFound(div));  titleInput.addEventListener('input', () => {
+    closeDropdown(div);
+    showMessage(div, '');
   });
 
   titleInput.addEventListener('focus', () => {
-    if (titleInput.value.trim()) {
-      searchOpenLibrary(div);
-    }
+    closeDropdown(div);
+    showMessage(div, '');
   });
 
   fileInput.addEventListener('change', () => {
