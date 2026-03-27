@@ -211,6 +211,17 @@ input[type=text], select, input[type=file] {
   display: none;
 }
 
+.series-info strong {
+  font-size: 18px;
+}
+
+.series-counter {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -1136,7 +1147,8 @@ function renderCards() {
     card.className = 'series-card';
 
     const seriesHTML = `
-      <div class="series-info">
+  <div class="format-header">📚 Series</div>
+  <div class="series-info">
         <strong>${highlightMatch(series.name)}</strong><br>${highlightMatch(series.author)}
         <span class="series-counter"></span><br>
         <div class="series-actions">
