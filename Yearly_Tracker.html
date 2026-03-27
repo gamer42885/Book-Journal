@@ -15,7 +15,7 @@ body {
     color: #000;
 }
 
-/* Topnav Styles */
+/* Topnav */
 .topnav {
     background: linear-gradient(90deg, #4caf50, #2e7d32);
     display: flex;
@@ -27,7 +27,6 @@ body {
     border-radius: 12px;
     margin: 20px;
 }
-
 .topnav a {
     color: white;
     text-decoration: none;
@@ -37,7 +36,6 @@ body {
     transition: all 0.3s ease;
     position: relative;
 }
-
 .topnav a::after {
     content: '';
     display: block;
@@ -51,19 +49,33 @@ body {
     left: 50%;
     transform: translateX(-50%);
 }
-
 .topnav a:hover {
     background: rgba(255, 255, 255, 0.15);
 }
-
 .topnav a:hover::after {
     width: 80%;
 }
 
 .container {
-    padding: 20px;
-    max-width: 1000px;
+    padding: 30px;
+    max-width: 1100px;
     margin: 0 auto;
+}
+
+.hero {
+    text-align: center;
+    margin-bottom: 40px;
+}
+.hero h1 {
+    margin-bottom: 10px;
+}
+.hero p {
+    margin: 0;
+    color: #555;
+}
+
+.section {
+    margin-bottom: 30px;
 }
 
 button {
@@ -80,21 +92,54 @@ button:hover {
     opacity: 0.9;
 }
 
-.summary-box {
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+.format-card {
+    background: linear-gradient(135deg, #fff, #f1f8f4);
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+.format-header {
+    font-weight: 700;
+    margin-bottom: 15px;
+    opacity: 0.75;
 }
 
+.summary-box {
+    background: white;
+    padding: 18px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: 0.2s ease;
+}
+.summary-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.12);
+}
 .summary-box h3 {
     margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.summary-box p {
+    margin: 8px 0;
+}
+
+.export-wrap {
+    display: flex;
+    justify-content: flex-start;
+    flex-wrap: wrap;
 }
 
 @media (max-width: 600px) {
-    table, thead, tbody, th, td, tr {
-        display: block;
+    .container {
+        padding: 20px;
     }
 }
 </style>
@@ -110,12 +155,30 @@ button:hover {
 </div>
 
 <div class="container">
-    <h2>Yearly Book Summary</h2>
+    <div class="hero">
+        <h1>📚 Yearly Book Summary</h1>
+        <p>See your year at a glance in the same dashboard style as the rest of your tracker.</p>
+    </div>
 
-    <button id="exportYearPdfBtn" style="background:#8e44ad;">📄 Export Year as PDF</button>
+    <div class="section">
+        <div class="format-card">
+            <div class="format-header">📄 Export</div>
+            <div class="export-wrap">
+                <button id="exportYearPdfBtn" style="background:#8e44ad;">📄 Export Year as PDF</button>
+            </div>
+        </div>
+    </div>
 
-    <div id="yearSummary" class="summary-box"></div>
-    <div id="dashboard"></div>
+    <div class="section">
+        <div id="yearSummary" class="summary-box"></div>
+    </div>
+
+    <div class="section">
+        <div class="format-card">
+            <div class="format-header">📅 Monthly Breakdown</div>
+            <div id="dashboard" class="dashboard-grid"></div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -133,18 +196,15 @@ function parseLengthToMinutes(value) {
 
     const str = String(value).trim().toLowerCase();
 
-    // plain numeric string: "530"
     if (/^\d+(\.\d+)?$/.test(str)) {
         return Number(str);
     }
 
-    // hh:mm format like "8:30"
     if (/^\d{1,2}:\d{1,2}$/.test(str)) {
         const [h, m] = str.split(":").map(Number);
         return (h * 60) + m;
     }
 
-    // "8h 30m", "8 hr 30 min", "8hrs", "30m"
     const hourMatch = str.match(/(\d+)\s*(h|hr|hrs|hour|hours)/);
     const minuteMatch = str.match(/(\d+)\s*(m|min|mins|minute|minutes)/);
 
