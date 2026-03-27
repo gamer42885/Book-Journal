@@ -145,7 +145,10 @@ button:hover { opacity: 0.92; }
 #bookForm button {
     border: none;
 }
-#cover, #bookForm button[type="submit"] {
+#cover,
+#bookForm button[type="submit"],
+#searchFieldWrap,
+#previewRow {
     grid-column: span 2;
 }
 
@@ -224,10 +227,131 @@ button:hover { opacity: 0.92; }
 .format-audio { background: #b3e5fc; }
 .format-ebook { background: #d1c4e9; }
 
+#searchFieldWrap {
+    position: relative;
+    width: 100%;
+}
+
+.searchResults {
+    position: absolute;
+    top: calc(100% - 8px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    display: none;
+}
+
+.dropdown-item {
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.dropdown-item:last-child { border-bottom: none; }
+.dropdown-item:hover { background: #f1f8f4; }
+
+.dropdown-cover {
+    width: 42px;
+    height: 62px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
+    background: #eee;
+}
+
+.dropdown-text {
+    line-height: 1.35;
+    min-width: 0;
+}
+
+.dropdown-title {
+    font-weight: bold;
+    display: block;
+}
+
+.dropdown-meta {
+    font-size: 12px;
+    color: #666;
+}
+
+.dropdown-source {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #eef3ff;
+    color: #1a4fb5;
+    font-weight: 600;
+}
+
+.lookup-message {
+    display: none;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    background: #fdecea;
+    color: #b71c1c;
+}
+
+.lookup-message.show { display: block; }
+
+.lookup-message.success {
+    background: #e8f5e9;
+    color: #1b5e20;
+}
+
+#previewRow {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+#coverPreview {
+    width: 60px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    display: none;
+}
+
+#previewNote {
+    font-size: 12px;
+    color: #555;
+}
+
+.lookupBtn {
+    white-space: nowrap;
+}
+
+.googleBtn {
+    background: #1a73e8;
+    white-space: nowrap;
+}
+
+.notFoundBtn {
+    background: #757575;
+    white-space: nowrap;
+}
+
 @media(max-width:700px){
     .container { padding: 20px; }
     #bookForm { grid-template-columns: 1fr; }
-    #cover, #bookForm button[type="submit"] { grid-column: 1; }
+    #cover,
+    #bookForm button[type="submit"],
+    #searchFieldWrap,
+    #previewRow { grid-column: 1; }
 
     .book-card {
         grid-template-columns: 85px 1fr;
@@ -274,19 +398,27 @@ button:hover { opacity: 0.92; }
         <div class="form-card">
             <h3>Add / Edit Book</h3>
             <form id="bookForm">
-                <input type="text" id="title" placeholder="Title" required>
+                <div id="searchFieldWrap">
+                    <input type="text" id="title" placeholder="Title" autocomplete="off" required>
+                    <div id="searchResults" class="searchResults"></div>
+                    <div id="lookupMessage" class="lookup-message"></div>
+                </div>
+
                 <input type="text" id="author" placeholder="Author">
                 <input type="text" id="published" placeholder="Published">
                 <input type="number" id="pages" placeholder="Pages">
                 <input type="text" id="audioLength" placeholder="Audio Length (e.g. 10h 30m)">
                 <input type="date" id="dateStarted">
                 <input type="date" id="dateEnded">
+
                 <select id="format">
                     <option>Book</option>
                     <option>Ebook</option>
                     <option>Audio</option>
                 </select>
+
                 <input type="text" id="tags" placeholder="Genres (comma separated)">
+
                 <select id="rating">
                     <option value="">Select Rating</option>
                     <option value="1">1 ★</option>
@@ -295,7 +427,18 @@ button:hover { opacity: 0.92; }
                     <option value="4">4 ★★★★</option>
                     <option value="5">5 ★★★★★</option>
                 </select>
+
+                <button type="button" id="lookupBtn" class="lookupBtn">Search Books</button>
+                <button type="button" id="googleBtn" class="googleBtn">Google</button>
+                <button type="button" id="notFoundBtn" class="notFoundBtn">Book Not Found</button>
+
                 <input type="file" id="cover" accept="image/*">
+
+                <div id="previewRow">
+                    <img id="coverPreview" alt="Cover preview">
+                    <span id="previewNote"></span>
+                </div>
+
                 <button type="submit">Save Book</button>
             </form>
         </div>
@@ -334,8 +477,13 @@ const tags = document.getElementById("tags");
 const rating = document.getElementById("rating");
 const cover = document.getElementById("cover");
 const stats = document.getElementById("stats");
+const searchResults = document.getElementById("searchResults");
+const lookupMessage = document.getElementById("lookupMessage");
+const coverPreview = document.getElementById("coverPreview");
+const previewNote = document.getElementById("previewNote");
 
 let editIndex = null;
+let selectedLookupCover = "";
 
 // ---------------- Helpers ----------------
 function getBooks() {
@@ -400,6 +548,405 @@ function getFormatClass(value) {
     if (v === "audio") return "format-audio";
     if (v === "ebook") return "format-ebook";
     return "format-book";
+}
+
+function escapeHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function normalizeText(value) {
+    return String(value || '').trim().toLowerCase();
+}
+
+function updatePreview(coverUrl, noteText = "API cover selected") {
+    if (coverUrl) {
+        coverPreview.src = coverUrl;
+        coverPreview.style.display = 'block';
+        previewNote.textContent = noteText;
+    } else {
+        coverPreview.removeAttribute('src');
+        coverPreview.style.display = 'none';
+        previewNote.textContent = noteText || '';
+    }
+}
+
+function showMessage(text, type = 'error') {
+    lookupMessage.textContent = text || '';
+    lookupMessage.classList.remove('show', 'success');
+    if (type === 'success') lookupMessage.classList.add('success');
+
+    if (!text) return;
+
+    lookupMessage.classList.add('show');
+
+    clearTimeout(lookupMessage._hideTimer);
+    lookupMessage._hideTimer = setTimeout(() => {
+        lookupMessage.classList.remove('show');
+    }, 3000);
+}
+
+function closeDropdown() {
+    searchResults.innerHTML = '';
+    searchResults.style.display = 'none';
+}
+
+function getBookSearchTerms() {
+    return {
+        title: title.value.trim(),
+        manualAuthor: author.value.trim(),
+        seriesName: ''
+    };
+}
+
+function getOpenLibraryScore(book, searchTerms) {
+    const itemTitle = normalizeText(book.title);
+    const authors = normalizeText((book.author_name || []).join(' '));
+    const series = normalizeText((book.series || []).join(' '));
+    const firstSentence = normalizeText((book.first_sentence || []).join(' '));
+
+    const searchTitle = normalizeText(searchTerms.title);
+    const searchAuthor = normalizeText(searchTerms.manualAuthor);
+    const searchSeries = normalizeText(searchTerms.seriesName);
+
+    let score = 0;
+
+    if (searchTitle) {
+        if (itemTitle === searchTitle) score += 120;
+        else if (itemTitle.startsWith(searchTitle)) score += 80;
+        else if (itemTitle.includes(searchTitle)) score += 50;
+    }
+
+    if (searchAuthor) {
+        if (authors === searchAuthor) score += 70;
+        else if (authors.includes(searchAuthor)) score += 40;
+    }
+
+    if (searchSeries) {
+        if (series.includes(searchSeries)) score += 45;
+        else if (firstSentence.includes(searchSeries)) score += 10;
+    }
+
+    if (book.cover_i) score += 8;
+    if (book.first_publish_year) score += 3;
+    if (book.ratings_average) score += 2;
+
+    return score;
+}
+
+function getGoogleBooksScore(book, searchTerms) {
+    const info = book.volumeInfo || {};
+    const itemTitle = normalizeText(info.title);
+    const subtitle = normalizeText(info.subtitle);
+    const authors = normalizeText((info.authors || []).join(' '));
+    const series = normalizeText(info.seriesInfo?.bookDisplayNumber || info.seriesInfo?.seriesBookType || '');
+    const categories = normalizeText((info.categories || []).join(' '));
+
+    const searchTitle = normalizeText(searchTerms.title);
+    const searchAuthor = normalizeText(searchTerms.manualAuthor);
+    const searchSeries = normalizeText(searchTerms.seriesName);
+
+    let score = 0;
+
+    if (searchTitle) {
+        if (itemTitle === searchTitle) score += 120;
+        else if (itemTitle.startsWith(searchTitle)) score += 80;
+        else if (`${itemTitle} ${subtitle}`.includes(searchTitle)) score += 50;
+    }
+
+    if (searchAuthor) {
+        if (authors === searchAuthor) score += 70;
+        else if (authors.includes(searchAuthor)) score += 40;
+    }
+
+    if (searchSeries) {
+        if (series.includes(searchSeries)) score += 35;
+        else if (categories.includes(searchSeries)) score += 10;
+    }
+
+    if (info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail) score += 8;
+    if (info.publishedDate) score += 3;
+    if (info.averageRating) score += 2;
+
+    return score;
+}
+
+function dedupeResults(results) {
+    const seen = new Set();
+    return results.filter(item => {
+        const key = `${normalizeText(item.title)}|${normalizeText(item.author)}|${normalizeText(item.sourceKey || '')}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
+function getVolumePublished(raw) {
+    const info = raw?.volumeInfo || {};
+    return info.publishedDate || '';
+}
+
+function getVolumePages(raw) {
+    const info = raw?.volumeInfo || {};
+    return Number(info.pageCount || 0) || '';
+}
+
+function getVolumeGenres(raw) {
+    const info = raw?.volumeInfo || {};
+    return Array.isArray(info.categories) ? info.categories.join(', ') : '';
+}
+
+function getOpenLibraryPublished(raw) {
+    return raw.first_publish_year ? String(raw.first_publish_year) : '';
+}
+
+function getOpenLibraryPages(raw) {
+    return '';
+}
+
+function getOpenLibraryGenres(raw) {
+    const subjects = Array.isArray(raw.subject) ? raw.subject.slice(0, 6) : [];
+    return subjects.join(', ');
+}
+
+function selectBookResult(book) {
+    title.value = book.title || title.value.trim();
+    author.value = book.author || author.value.trim();
+    selectedLookupCover = book.cover || '';
+
+    if (book.published && !published.value.trim()) {
+        published.value = book.published;
+    } else if (book.published) {
+        published.value = book.published;
+    }
+
+    if (book.pages !== '' && book.pages !== null && book.pages !== undefined) {
+        pages.value = book.pages;
+    }
+
+    if (book.genres) {
+        tags.value = book.genres;
+    }
+
+    if (book.cover) {
+        updatePreview(
+            book.cover,
+            `${book.source || 'Search'} match selected${book.author ? ` • Author: ${book.author}` : ''}`
+        );
+    } else {
+        updatePreview(
+            '',
+            `${book.source || 'Search'} match selected${book.author ? ` • Author: ${book.author}` : ''} • No cover available`
+        );
+    }
+
+    closeDropdown();
+}
+
+function showDropdown(docs) {
+    searchResults.innerHTML = '';
+
+    if (!docs || !docs.length) {
+        searchResults.style.display = 'none';
+        return;
+    }
+
+    docs.forEach(book => {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+
+        const bookCover = book.cover || '';
+        const bookAuthor = book.author || 'Unknown Author';
+        const year = book.year ? ` • ${book.year}` : '';
+        const seriesText = book.series ? ` • ${book.series}` : '';
+
+        item.innerHTML = `
+            ${bookCover ? `<img src="${bookCover}" alt="${escapeHtml(book.title || 'Book cover')}" class="dropdown-cover">` : `<div class="dropdown-cover"></div>`}
+            <div class="dropdown-text">
+                <span class="dropdown-title">${escapeHtml(book.title || 'Untitled')}</span>
+                <span class="dropdown-meta">${escapeHtml(bookAuthor)}${year}${seriesText}</span>
+                <span class="dropdown-source">${escapeHtml(book.source || 'Search')}</span>
+            </div>
+        `;
+
+        item.addEventListener('click', () => selectBookResult(book));
+        searchResults.appendChild(item);
+    });
+
+    searchResults.style.display = 'block';
+}
+
+async function searchGoogleBooks(searchTerms, maxResults = 40) {
+    const queryParts = [];
+    if (searchTerms.title) queryParts.push(`intitle:${searchTerms.title}`);
+    if (searchTerms.manualAuthor) queryParts.push(`inauthor:${searchTerms.manualAuthor}`);
+    if (searchTerms.seriesName) queryParts.push(searchTerms.seriesName);
+
+    if (!queryParts.length) return [];
+
+    const q = encodeURIComponent(queryParts.join(' '));
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=${Math.min(maxResults, 40)}&printType=books`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+    const items = Array.isArray(data.items) ? data.items : [];
+
+    return items.map(item => {
+        const info = item.volumeInfo || {};
+        const imageLinks = info.imageLinks || {};
+        const itemCover = imageLinks.thumbnail || imageLinks.smallThumbnail || '';
+        return {
+            source: 'Google Books',
+            sourceKey: item.id || info.infoLink || info.previewLink || info.canonicalVolumeLink || '',
+            title: info.title || '',
+            author: (info.authors && info.authors.length) ? info.authors[0] : '',
+            year: info.publishedDate || '',
+            published: getVolumePublished(item),
+            pages: getVolumePages(item),
+            genres: getVolumeGenres(item),
+            series: info.seriesInfo?.bookDisplayNumber || '',
+            cover: itemCover ? itemCover.replace('http://', 'https://') : '',
+            raw: item,
+            _score: getGoogleBooksScore(item, searchTerms)
+        };
+    });
+}
+
+async function searchOpenLibrary() {
+    const { title: searchTitle, manualAuthor, seriesName } = getBookSearchTerms();
+
+    if (!searchTitle) {
+        closeDropdown();
+        showMessage('Enter a book title first.');
+        return;
+    }
+
+    const lookupBtn = document.getElementById('lookupBtn');
+    const googleBtn = document.getElementById('googleBtn');
+    const originalLookupText = lookupBtn.textContent;
+    const originalGoogleText = googleBtn.textContent;
+
+    lookupBtn.textContent = 'Searching...';
+    googleBtn.textContent = 'Searching...';
+    lookupBtn.disabled = true;
+    googleBtn.disabled = true;
+
+    const limit = 100;
+    const maxResults = 200;
+
+    try {
+        const searchTerms = { title: searchTitle, manualAuthor, seriesName };
+        const queryPieces = [searchTitle, manualAuthor, seriesName].filter(Boolean);
+        const fullQuery = encodeURIComponent(queryPieces.join(' '));
+
+        const allOpenLibrary = [];
+        const seenKeys = new Set();
+        let page = 1;
+        let totalFound = Infinity;
+
+        while (allOpenLibrary.length < maxResults && allOpenLibrary.length < totalFound) {
+            const res = await fetch(`https://openlibrary.org/search.json?q=${fullQuery}&limit=${limit}&page=${page}`);
+            const data = await res.json();
+
+            if (!data.docs || !data.docs.length) break;
+
+            totalFound = data.numFound || data.docs.length;
+
+            for (const book of data.docs) {
+                const key = book.key || `${book.title || ''}-${(book.author_name || []).join(',')}-${(book.series || []).join(',')}-${book.first_publish_year || ''}`;
+                if (!seenKeys.has(key)) {
+                    seenKeys.add(key);
+                    allOpenLibrary.push(book);
+                }
+                if (allOpenLibrary.length >= maxResults) break;
+            }
+
+            if (data.docs.length < limit) break;
+            page++;
+        }
+
+        const openLibraryResults = allOpenLibrary.map(book => ({
+            source: 'Open Library',
+            sourceKey: book.key || '',
+            title: book.title || '',
+            author: (book.author_name && book.author_name.length) ? book.author_name[0] : '',
+            year: book.first_publish_year || '',
+            published: getOpenLibraryPublished(book),
+            pages: getOpenLibraryPages(book),
+            genres: getOpenLibraryGenres(book),
+            series: (book.series && book.series.length) ? book.series[0] : '',
+            cover: book.cover_i ? `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg` : '',
+            raw: book,
+            _score: getOpenLibraryScore(book, searchTerms)
+        }));
+
+        const googleResults = await searchGoogleBooks(searchTerms, 40).catch(() => []);
+
+        const mergedResults = dedupeResults(
+            [...openLibraryResults, ...googleResults]
+                .sort((a, b) => {
+                    if (b._score !== a._score) return b._score - a._score;
+                    return (a.title || '').localeCompare(b.title || '');
+                })
+        );
+
+        if (!mergedResults.length) {
+            closeDropdown();
+            showMessage('No book found.');
+            return;
+        }
+
+        showDropdown(mergedResults);
+        showMessage(
+            `${mergedResults.length.toLocaleString()} results loaded from Open Library + Google Books.`,
+            'success'
+        );
+
+    } catch (err) {
+        console.error(err);
+        closeDropdown();
+        showMessage('Search failed.');
+    } finally {
+        lookupBtn.textContent = originalLookupText;
+        googleBtn.textContent = originalGoogleText;
+        lookupBtn.disabled = false;
+        googleBtn.disabled = false;
+    }
+}
+
+function openGoogleSearch() {
+    const { title: searchTitle, manualAuthor, seriesName } = getBookSearchTerms();
+    const query = [searchTitle, manualAuthor, seriesName].filter(Boolean).join(' ');
+    if (!query) {
+        showMessage('Enter a book title first.');
+        return;
+    }
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+}
+
+function markBookNotFound() {
+    const currentTitle = title.value.trim();
+
+    if (!currentTitle) {
+        showMessage('Enter a book title first.');
+        return;
+    }
+
+    selectedLookupCover = '';
+    updatePreview('', 'Manual entry selected • No API match');
+    closeDropdown();
+    showMessage(`"${currentTitle}" saved as manual entry.`, 'success');
+}
+
+function clearLookupState() {
+    selectedLookupCover = '';
+    updatePreview('', '');
+    closeDropdown();
+    showMessage('');
 }
 
 // ---------------- Month Management ----------------
@@ -499,7 +1046,11 @@ document.getElementById("bookForm").onsubmit = function(e) {
     const file = cover.files[0];
 
     const saveData = (coverData) => {
-        if (coverData) book.cover = coverData;
+        if (coverData) {
+            book.cover = coverData;
+        } else if (selectedLookupCover) {
+            book.cover = selectedLookupCover;
+        }
 
         if (editIndex !== null) {
             book.cover = book.cover || books[editIndex].cover || "";
@@ -512,6 +1063,7 @@ document.getElementById("bookForm").onsubmit = function(e) {
         saveBooks(books);
         this.reset();
         rating.value = "";
+        clearLookupState();
         displayBooks();
     };
 
@@ -536,6 +1088,12 @@ function editBook(book, index) {
     format.value = book.format || "Book";
     tags.value = book.tags || "";
     rating.value = book.rating || "";
+    selectedLookupCover = book.cover || "";
+    if (book.cover) {
+        updatePreview(book.cover, "Current cover");
+    } else {
+        updatePreview("", "");
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -568,20 +1126,20 @@ function displayBooks() {
         const formatText = book.format || "Book";
 
         card.innerHTML = `
-            <img src="${book.cover || ''}" alt="${book.title}">
+            <img src="${book.cover || ''}" alt="${escapeHtml(book.title)}">
             <div class="book-details">
-                <strong>${book.title}</strong><br>
-                Author: ${book.author || "-"}<br>
-                Published: ${book.published || "-"}<br>
+                <strong>${escapeHtml(book.title)}</strong><br>
+                Author: ${escapeHtml(book.author || "-")}<br>
+                Published: ${escapeHtml(book.published || "-")}<br>
                 Pages: ${book.pages || 0}<br>
                 ${lengthLine}
                 Reading Span: ${days}<br>
                 Started: ${book.started || "-"}<br>
                 Ended: ${book.ended || "-"}<br>
-                Format: ${formatText}<br>
-                Genres: ${book.tags || "-"}<br>
+                Format: ${escapeHtml(formatText)}<br>
+                Genres: ${escapeHtml(book.tags || "-")}<br>
                 Rating: ${book.rating || 0} ★<br>
-                <span class="format-badge ${getFormatClass(book.format)}">${formatText}</span>
+                <span class="format-badge ${getFormatClass(book.format)}">${escapeHtml(formatText)}</span>
             </div>
             <div class="book-controls">
                 <button class="edit-btn" style="background:#2980b9;">Edit</button>
@@ -787,6 +1345,43 @@ document.getElementById("exportPdfBtn").onclick = function () {
 
     doc.save(`Reading_Report_${selectedMonth}.pdf`);
 };
+
+// ---------------- Events ----------------
+document.getElementById("lookupBtn").addEventListener("click", searchOpenLibrary);
+document.getElementById("googleBtn").addEventListener("click", openGoogleSearch);
+document.getElementById("notFoundBtn").addEventListener("click", markBookNotFound);
+
+title.addEventListener('input', () => {
+    closeDropdown();
+    showMessage('');
+});
+
+title.addEventListener('focus', () => {
+    closeDropdown();
+    showMessage('');
+});
+
+author.addEventListener('input', () => {
+    closeDropdown();
+    showMessage('');
+});
+
+cover.addEventListener('change', () => {
+    const file = cover.files[0];
+    if (!file) return;
+    closeDropdown();
+    selectedLookupCover = '';
+    const reader = new FileReader();
+    reader.onload = () => updatePreview(reader.result, 'Manual cover selected');
+    reader.readAsDataURL(file);
+});
+
+document.addEventListener('click', (e) => {
+    const searchWrap = document.getElementById('searchFieldWrap');
+    if (!searchWrap.contains(e.target)) {
+        closeDropdown();
+    }
+});
 
 // ---------------- Init ----------------
 monthSelect.addEventListener("change", displayBooks);
