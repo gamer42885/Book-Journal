@@ -475,6 +475,7 @@ input[type=text], select, input[type=file] {
         <div class="series-form-actions">
           <button type="button" id="addBookBtn">+ Add Another Book</button>
           <button type="submit" id="submitSeriesBtn">Add Series</button>
+          <button type="button" id="clearSeriesBtn">Clear</button>
           <button type="button" id="cancelSeriesEditBtn">Cancel Edit</button>
         </div>
       </form>
@@ -1141,6 +1142,7 @@ function renderCards() {
         <span class="series-counter"></span><br>
         <div class="series-actions">
           <button type="button" onclick="startEditSeries(${sIndex})">Edit Series</button>
+		  <button type="button" onclick="clearSeriesBooks(${sIndex})">Clear</button>
           <button type="button" onclick="removeSeries(${sIndex})">Remove Series</button>
         </div>
       </div>
@@ -1383,6 +1385,24 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCards();
   setFormatFilter('All');
 });
+
+document.getElementById('clearSeriesBtn').addEventListener('click', () => {
+  document.getElementById('seriesName').value = '';
+  document.getElementById('seriesAuthor').value = '';
+  document.getElementById('bookInputs').innerHTML = '';
+  document.getElementById('bookInputs').appendChild(createBookInput());
+});
+
+function clearSeriesBooks(index) {
+  if (!confirm("Clear all books in this series?")) return;
+
+  const data = getSeriesData();
+  if (!data[index]) return;
+
+  data[index].books = [];
+  saveSeriesData(data);
+  renderCards();
+}
 </script>
 </body>
 </html>
