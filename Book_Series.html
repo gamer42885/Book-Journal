@@ -99,6 +99,21 @@ button {
 }
 button:hover { opacity:0.9; }
 
+/* Danger / Clear Button */
+button.danger {
+  background: linear-gradient(135deg, #e53935, #b71c1c);
+  color: #fff;
+}
+
+button.danger:hover {
+  background: linear-gradient(135deg, #f44336, #c62828);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+button.danger:active {
+  transform: scale(0.97);
+}
+
 #formatFilters {
   display: flex;
   flex-wrap: wrap;
@@ -199,7 +214,8 @@ input[type=text], select, input[type=file] {
 }
 
 .series-form-actions #addBookBtn,
-.series-form-actions #submitSeriesBtn {
+.series-form-actions #submitSeriesBtn,
+.series-form-actions #clearSeriesBtn {
   flex: 1 1 0;
   min-width: 0;
   margin: 0;
@@ -441,6 +457,7 @@ input[type=text], select, input[type=file] {
 
   .series-form-actions #addBookBtn,
   .series-form-actions #submitSeriesBtn,
+  .series-form-actions #clearSeriesBtn,
   .series-form-actions #cancelSeriesEditBtn {
     width: 100%;
     flex: none;
@@ -475,7 +492,7 @@ input[type=text], select, input[type=file] {
         <div class="series-form-actions">
           <button type="button" id="addBookBtn">+ Add Another Book</button>
           <button type="submit" id="submitSeriesBtn">Add Series</button>
-          <button type="button" id="clearSeriesBtn">Clear</button>
+          <button type="button" id="clearSeriesBtn" class="danger">Clear</button>
           <button type="button" id="cancelSeriesEditBtn">Cancel Edit</button>
         </div>
       </form>
@@ -1037,8 +1054,26 @@ function startEditSeries(seriesIndex) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+function clearSeriesBooks(index) {
+  if (!confirm("Clear all books in this series?")) return;
+
+  const data = getSeriesData();
+  if (!data[index]) return;
+
+  data[index].books = [];
+  saveSeriesData(data);
+  renderCards();
+}
+
 document.getElementById('cancelSeriesEditBtn').addEventListener('click', () => {
   resetSeriesForm();
+});
+
+document.getElementById('clearSeriesBtn').addEventListener('click', () => {
+  document.getElementById('seriesName').value = '';
+  document.getElementById('seriesAuthor').value = '';
+  document.getElementById('bookInputs').innerHTML = '';
+  document.getElementById('bookInputs').appendChild(createBookInput());
 });
 
 document.getElementById('bookInputs').appendChild(createBookInput());
@@ -1054,7 +1089,6 @@ document.getElementById('addSeriesForm').addEventListener('submit', async e => {
   const author = document.getElementById('seriesAuthor').value.trim();
   const bookDivs = document.querySelectorAll('#bookInputs .book-input');
   const books = [];
-
 
   for (let div of bookDivs) {
     const title = div.querySelector('.bookTitle').value.trim();
@@ -1142,7 +1176,7 @@ function renderCards() {
         <span class="series-counter"></span><br>
         <div class="series-actions">
           <button type="button" onclick="startEditSeries(${sIndex})">Edit Series</button>
-		  <button type="button" onclick="clearSeriesBooks(${sIndex})">Clear</button>
+          <button type="button" class="danger" onclick="clearSeriesBooks(${sIndex})">Clear</button>
           <button type="button" onclick="removeSeries(${sIndex})">Remove Series</button>
         </div>
       </div>
@@ -1385,24 +1419,6 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCards();
   setFormatFilter('All');
 });
-
-document.getElementById('clearSeriesBtn').addEventListener('click', () => {
-  document.getElementById('seriesName').value = '';
-  document.getElementById('seriesAuthor').value = '';
-  document.getElementById('bookInputs').innerHTML = '';
-  document.getElementById('bookInputs').appendChild(createBookInput());
-});
-
-function clearSeriesBooks(index) {
-  if (!confirm("Clear all books in this series?")) return;
-
-  const data = getSeriesData();
-  if (!data[index]) return;
-
-  data[index].books = [];
-  saveSeriesData(data);
-  renderCards();
-}
 </script>
 </body>
 </html>
