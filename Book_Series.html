@@ -464,36 +464,23 @@ input[type=text], select, input[type=file] {
     <p>Organize your series collection and track what you have, read, and listened to.</p>
   </div>
 
-  <!-- ✅ NEW BUTTON -->
-  <button type="button" id="toggleSeriesFormBtn">+ Add New Series</button>
-
   <div class="section">
     <div class="form-card">
-
-      <!-- ✅ FORM HIDDEN BY DEFAULT -->
-      <form id="addSeriesForm" style="display:none;">
-
-        <!-- hidden title -->
-        <h3 id="seriesFormTitle" style="display:none;">Add New Series</h3>
-
+      <form id="addSeriesForm">
+        <h3 id="seriesFormTitle">Add New Series</h3>
         <input type="text" id="seriesName" placeholder="Series Name">
         <input type="text" id="seriesAuthor" placeholder="Author" required>
-
         <div id="bookInputs"></div>
 
         <div class="series-form-actions">
           <button type="button" id="addBookBtn">+ Add Another Book</button>
           <button type="submit" id="submitSeriesBtn">Add Series</button>
-          <button type="button" id="clearSeriesBtn" class="danger">Clear</button>
+          <button type="button" id="clearSeriesBtn">Clear</button>
           <button type="button" id="cancelSeriesEditBtn">Cancel Edit</button>
         </div>
-
       </form>
-
     </div>
   </div>
-
-</div>
 
   <div class="stats-grid">
     <div class="format-card">
@@ -551,25 +538,6 @@ input[type=text], select, input[type=file] {
 </div>
 
 <script>
-/* =========================
-   TOGGLE BUTTON LOGIC
-   ========================= */
-
-const toggleBtn = document.getElementById('toggleSeriesFormBtn');
-const form = document.getElementById('addSeriesForm');
-const title = document.getElementById('seriesFormTitle');
-
-toggleBtn.addEventListener('click', () => {
-  const isHidden = form.style.display === 'none';
-
-  form.style.display = isHidden ? 'block' : 'none';
-  title.style.display = isHidden ? 'block' : 'none';
-
-  toggleBtn.textContent = isHidden
-    ? '− Hide Series Form'
-    : '+ Add New Series';
-});
-
 function getSeriesData(){ return JSON.parse(localStorage.getItem('seriesData') || '[]'); }
 function saveSeriesData(data){ localStorage.setItem('seriesData', JSON.stringify(data)); }
 function getCheckboxState(){ return JSON.parse(localStorage.getItem('checkboxState') || '{}'); }
@@ -1435,29 +1403,6 @@ function clearSeriesBooks(index) {
   saveSeriesData(data);
   renderCards();
 }
-
-/* minimal placeholders so nothing breaks */
-function getSeriesData(){ return []; }
-function saveSeriesData(){}
-
-function createBookInput(){
-  const div = document.createElement('div');
-  div.innerHTML = `<input type="text" placeholder="Book Title">`;
-  return div;
-}
-
-document.getElementById('bookInputs').appendChild(createBookInput());
-
-document.getElementById('addBookBtn').addEventListener('click', () => {
-  document.getElementById('bookInputs').appendChild(createBookInput());
-});
-
-document.getElementById('clearSeriesBtn').addEventListener('click', () => {
-  document.getElementById('seriesName').value = '';
-  document.getElementById('seriesAuthor').value = '';
-  document.getElementById('bookInputs').innerHTML = '';
-  document.getElementById('bookInputs').appendChild(createBookInput());
-});
 </script>
 </body>
 </html>
