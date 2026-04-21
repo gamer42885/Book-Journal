@@ -465,9 +465,13 @@ input[type=text], select, input[type=file] {
   </div>
 
   <div class="section">
-    <div class="form-card">
-      <form id="addSeriesForm">
-        <h3 id="seriesFormTitle">Add New Series</h3>
+
+  <!-- Toggle Button -->
+  <button id="toggleSeriesFormBtn">+ Add New Series</button>
+
+  <div class="form-card" id="seriesFormContainer" style="display:none;">
+    <form id="addSeriesForm">
+      <h3 id="seriesFormTitle" style="display:none;">Add New Series</h3>
         <input type="text" id="seriesName" placeholder="Series Name">
         <input type="text" id="seriesAuthor" placeholder="Author" required>
         <div id="bookInputs"></div>
@@ -1403,6 +1407,15 @@ function clearSeriesBooks(index) {
   saveSeriesData(data);
   renderCards();
 }
+
+const toggleBtn = document.getElementById('toggleSeriesFormBtn');
+const formContainer = document.getElementById('seriesFormContainer');
+
+toggleBtn.addEventListener('click', () => {
+  const isHidden = formContainer.style.display === 'none';
+  formContainer.style.display = isHidden ? 'block' : 'none';
+  toggleBtn.textContent = isHidden ? '− Hide Series Form' : '+ Add New Series';
+});
 </script>
 </body>
 </html>
