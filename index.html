@@ -18,6 +18,11 @@ body { margin:0; font-family: Arial, sans-serif; background:#f4f4f4; color:#000;
 .topnav a::after { content: ''; display: block; width: 0; height: 3px; background: #fff; border-radius: 3px; transition: width 0.3s; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); }
 .topnav a:hover { background: rgba(255,255,255,0.15); }
 .topnav a:hover::after { width: 80%; }
+.topnav a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 
 .container{padding:30px}
 .hero{text-align:center;margin-bottom:40px}
@@ -91,10 +96,10 @@ body { margin:0; font-family: Arial, sans-serif; background:#f4f4f4; color:#000;
 <body>
 
 <div class="topnav">
-  <a href="index.html">Home</a>
-  <a href="Book_Series.html">Book Series</a>
-  <a href="Monthly_Tracker.html">Monthly Tracker</a>
-  <a href="Yearly_Tracker.html">Yearly Tracker</a>
+  <a href="index.html">🏠 Home</a>
+  <a href="Book_Series.html">📚 Book Series</a>
+  <a href="Monthly_Tracker.html">📅 Monthly Tracker</a>
+  <a href="Yearly_Tracker.html">📊 Yearly Tracker</a>
 </div>
 
 <div class="container">
