@@ -532,6 +532,28 @@ input[type=text], select, input[type=file] {
     <div class="format-card">
       <div class="format-header">🔍 Search Series/Books</div>
       <input type="text" id="searchInput" placeholder="Search by Series, Author, or Book">
+      
+      <div class="section">
+
+  <!-- Toggle Button -->
+  <button id="toggleSeriesFormBtn">+ Add New Series</button>
+
+  <div class="form-card" id="seriesFormContainer" style="display:none;">
+    <form id="addSeriesForm">
+      <h3 id="seriesFormTitle" style="display:none;">Add New Series</h3>
+        <input type="text" id="seriesName" placeholder="Series Name">
+        <input type="text" id="seriesAuthor" placeholder="Author" required>
+        <div id="bookInputs"></div>
+
+        <div class="series-form-actions">
+          <button type="button" id="addBookBtn">+ Add Another Book</button>
+          <button type="submit" id="submitSeriesBtn">Add Series</button>
+          <button type="button" id="clearSeriesBtn">Clear</button>
+          <button type="button" id="cancelSeriesEditBtn">Cancel Edit</button>
+        </div>
+      </form>
+    </div>
+  </div>
     </div>
   </div>
 
