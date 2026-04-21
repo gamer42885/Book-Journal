@@ -4,81 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reading Dashboard</title>
-
 <style>
 body { margin:0; font-family: Arial, sans-serif; background:#f4f4f4; color:#000; }
 
-/* TOP NAV (MOBILE FRIENDLY + EMOJI) */
 .topnav {
   background: linear-gradient(90deg, #4caf50, #2e7d32);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  padding: 10px 14px;
-  gap: 10px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  border-radius: 12px;
+  display: flex; justify-content: center; align-items: center;
+  padding: 10px 20px; gap: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 12px;
   margin: 20px;
 }
-
+.topnav a { color: white; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: 500; position: relative; transition: all 0.3s ease; }
+.topnav a::after { content: ''; display: block; width: 0; height: 3px; background: #fff; border-radius: 3px; transition: width 0.3s; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); }
+.topnav a:hover { background: rgba(255,255,255,0.15); }
+.topnav a:hover::after { width: 80%; }
 .topnav a {
-  color: white;
-  text-decoration: none;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-weight: 500;
-  position: relative;
-  transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 6px;
-  white-space: nowrap;
-}
-
-.topnav a::after {
-  content: '';
-  display: block;
-  width: 0;
-  height: 3px;
-  background: #fff;
-  border-radius: 3px;
-  transition: width 0.3s;
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.topnav a:hover {
-  background: rgba(255,255,255,0.15);
-}
-
-.topnav a:hover::after {
-  width: 80%;
-}
-
-/* TABLET */
-@media (max-width: 768px) {
-  .topnav a {
-    flex: 1 1 calc(50% - 8px);
-    max-width: calc(50% - 8px);
-    font-size: 14px;
-    padding: 10px 8px;
-  }
-}
-
-/* PHONE */
-@media (max-width: 480px) {
-  .topnav {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .topnav a {
-    width: 100%;
-  }
 }
 
 .container{padding:30px}
@@ -150,15 +93,13 @@ body { margin:0; font-family: Arial, sans-serif; background:#f4f4f4; color:#000;
 .tab-button.active{background:#4caf50;color:#fff}
 </style>
 </head>
-
 <body>
 
-<!-- EMOJI NAV -->
 <div class="topnav">
-  <a href="index.html">🏠 Home</a>
-  <a href="Book_Series.html">📚 Book Series</a>
-  <a href="Monthly_Tracker.html">📅 Monthly Tracker</a>
-  <a href="Yearly_Tracker.html">📊 Yearly Tracker</a>
+  <a href="index.html">Home</a>
+  <a href="Book_Series.html">Book Series</a>
+  <a href="Monthly_Tracker.html">Monthly Tracker</a>
+  <a href="Yearly_Tracker.html">Yearly Tracker</a>
 </div>
 
 <div class="container">
@@ -167,266 +108,3 @@ body { margin:0; font-family: Arial, sans-serif; background:#f4f4f4; color:#000;
     <h1>📚 My Reading Dashboard</h1>
     <p>Track your books and monitor your progress.</p>
   </div>
-
-  <!-- STAT CARDS -->
-  <div class="stats-grid">
-    <div class="format-card">
-      <div class="format-header">📦 Collection</div>
-      <div class="format-grid">
-        <div class="format-item book"><span class="icon">📘</span><h3 id="seriesBooks">0</h3><p>Books</p></div>
-        <div class="format-item audio"><span class="icon">🎧</span><h3 id="totalAudio">0</h3><p>Audio</p></div>
-        <div class="format-item ebook"><span class="icon">📱</span><h3 id="totalEbooks">0</h3><p>Ebooks</p></div>
-      </div>
-    </div>
-
-    <div class="format-card">
-      <div class="format-header">📖 In Progress</div>
-      <div class="format-grid">
-        <div class="format-item book"><span class="icon">📘</span><h3 id="inProgressBooks">0</h3><p>Books</p></div>
-        <div class="format-item audio"><span class="icon">🎧</span><h3 id="inProgressAudio">0</h3><p>Audio</p></div>
-        <div class="format-item ebook"><span class="icon">📱</span><h3 id="inProgressEbooks">0</h3><p>Ebooks</p></div>
-      </div>
-    </div>
-
-    <div class="format-card">
-      <div class="format-header">✅ Finished</div>
-      <div class="format-grid">
-        <div class="format-item book"><span class="icon">📘</span><h3 id="finishedBooks">0</h3><p>Books</p></div>
-        <div class="format-item audio"><span class="icon">🎧</span><h3 id="finishedAudio">0</h3><p>Audio</p></div>
-        <div class="format-item ebook"><span class="icon">📱</span><h3 id="finishedEbooks">0</h3><p>Ebooks</p></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MONTHLY PROGRESS -->
-  <div class="section">
-    <div class="format-card">
-      <div class="format-header">📈 Monthly Progress</div>
-
-      <div style="margin-bottom:15px;">
-        <select id="monthSelect"></select>
-        <h3 id="monthLabel" style="margin:12px 0 0;"></h3>
-      </div>
-
-      <div class="format-grid">
-        <div class="format-item book">
-          <span class="icon">📘</span>
-          <h3 id="monthBooks">0</h3>
-          <p>Books</p>
-          <small><span id="monthPages">0</span> pages</small>
-        </div>
-
-        <div class="format-item audio">
-          <span class="icon">🎧</span>
-          <h3 id="monthAudio">0</h3>
-          <p>Audio</p>
-          <small><span id="monthAudioLength">0m</span> length</small>
-        </div>
-
-        <div class="format-item ebook">
-          <span class="icon">📱</span>
-          <h3 id="monthEbooks">0</h3>
-          <p>Ebooks</p>
-          <small><span id="monthEbookPages">0</span> pages</small>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- READING OVERVIEW -->
-  <div class="section">
-    <h2>📖 Reading Overview</h2>
-    <div>
-      <button class="tab-button active" data-type="Book">Books</button>
-      <button class="tab-button" data-type="Audio">Audio</button>
-      <button class="tab-button" data-type="Ebook">Ebooks</button>
-    </div>
-
-    <h3>Currently Reading</h3>
-    <div id="current" class="reading-grid"></div>
-
-    <h3 style="margin-top:30px;">Recently Finished</h3>
-    <div id="finished" class="reading-grid"></div>
-  </div>
-
-</div>
-
-<script>
-let tab = "Book";
-
-function updateDashboard(){
-  const books = JSON.parse(localStorage.getItem("books")) || [];
-  const seriesData = JSON.parse(localStorage.getItem("seriesData")) || [];
-  const checkboxState = JSON.parse(localStorage.getItem("checkboxState") || '{}');
-  const currentMonth = new Date().toISOString().slice(0,7);
-
-  let seriesBookCount = 0;
-  let totalAudio = 0;
-  let totalEbooks = 0;
-
-  seriesData.forEach((series, sIndex) => {
-    (series.books || []).forEach((book, bIndex) => {
-      const haveId = `have-${sIndex}-${bIndex}`;
-      if (checkboxState[haveId]) {
-        if (book.format === "Book") seriesBookCount++;
-        if (book.format === "Audio") totalAudio++;
-        if (book.format === "Ebook") totalEbooks++;
-      }
-    });
-  });
-
-  document.getElementById("seriesBooks").textContent = seriesBookCount;
-  document.getElementById("totalAudio").textContent = totalAudio;
-  document.getElementById("totalEbooks").textContent = totalEbooks;
-
-  document.getElementById("inProgressBooks").textContent = books.filter(b => b.month === currentMonth && b.started && !b.ended && b.format === "Book").length;
-  document.getElementById("inProgressAudio").textContent = books.filter(b => b.month === currentMonth && b.started && !b.ended && b.format === "Audio").length;
-  document.getElementById("inProgressEbooks").textContent = books.filter(b => b.month === currentMonth && b.started && !b.ended && b.format === "Ebook").length;
-
-  document.getElementById("finishedBooks").textContent = books.filter(b => b.month === currentMonth && b.ended && b.format === "Book").length;
-  document.getElementById("finishedAudio").textContent = books.filter(b => b.month === currentMonth && b.ended && b.format === "Audio").length;
-  document.getElementById("finishedEbooks").textContent = books.filter(b => b.month === currentMonth && b.ended && b.format === "Ebook").length;
-
-  populateMonths();
-  renderMonth();
-  renderOverview();
-}
-
-function populateMonths(){
-  const select = document.getElementById("monthSelect");
-  const books = JSON.parse(localStorage.getItem("books")) || [];
-  const months = [...new Set(books.map(b => b.month).filter(Boolean))];
-  const current = new Date().toISOString().slice(0,7);
-
-  if (!months.includes(current)) months.unshift(current);
-
-  select.innerHTML = "";
-  months.sort((a,b) => b.localeCompare(a));
-
-  months.forEach(m => {
-    const opt = document.createElement("option");
-    opt.value = m;
-    opt.textContent = m;
-    select.appendChild(opt);
-  });
-
-  if (months.length) {
-    select.value = current && months.includes(current) ? current : months[0];
-  }
-}
-
-function toMinutes(value){
-  if (value == null || value === "") return 0;
-  if (typeof value === "number") return value;
-
-  const str = String(value).trim().toLowerCase();
-
-  if (/^\d+(\.\d+)?$/.test(str)) return Math.round(Number(str));
-
-  let total = 0;
-
-  const hrMatch = str.match(/(\d+)\s*h/);
-  const minMatch = str.match(/(\d+)\s*m/);
-
-  if (hrMatch) total += parseInt(hrMatch[1], 10) * 60;
-  if (minMatch) total += parseInt(minMatch[1], 10);
-
-  if (!hrMatch && str.includes(":")) {
-    const parts = str.split(":").map(Number);
-    if (parts.length === 2 && !parts.some(isNaN)) {
-      total = (parts[0] * 60) + parts[1];
-    }
-  }
-
-  return total;
-}
-
-function formatLength(totalMinutes){
-  totalMinutes = Number(totalMinutes) || 0;
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
-  if (hours > 0) return `${hours}h`;
-  return `${minutes}m`;
-}
-
-function renderMonth(){
-  const books = JSON.parse(localStorage.getItem("books")) || [];
-  const m = document.getElementById("monthSelect").value;
-
-  const bookList = books.filter(b => b.month === m && b.format === "Book" && b.ended);
-  const audioList = books.filter(b => b.month === m && b.format === "Audio" && b.ended);
-  const ebookList = books.filter(b => b.month === m && b.format === "Ebook" && b.ended);
-
-  document.getElementById("monthBooks").textContent = bookList.length;
-  document.getElementById("monthAudio").textContent = audioList.length;
-  document.getElementById("monthEbooks").textContent = ebookList.length;
-
-  document.getElementById("monthPages").textContent = bookList.reduce((s, b) => s + (Number(b.pages) || 0), 0);
-
-  document.getElementById("monthAudioLength").textContent = formatLength(
-    audioList.reduce((s, b) => s + toMinutes(b.audioLength), 0)
-  );
-
-  document.getElementById("monthEbookPages").textContent = ebookList.reduce((s, b) => s + (Number(b.pages) || 0), 0);
-
-  function formatMonthLabel(monthStr){
-  if(!monthStr) return "";
-
-  const [year, month] = monthStr.split("-");
-  const date = new Date(year, month - 1);
-
-  return date.toLocaleString("default", {
-    month: "long",
-    year: "numeric"
-  });
-}
-
-document.getElementById("monthLabel").textContent = formatMonthLabel(m);
-}
-
-function renderOverview(){
-  const books = JSON.parse(localStorage.getItem("books")) || [];
-  const currentMonth = new Date().toISOString().slice(0,7);
-
-  const current = books.filter(b => b.month === currentMonth && b.started && !b.ended && b.format === tab);
-  const finished = books.filter(b => b.ended && b.format === tab).slice(0, 12);
-
-  const cDiv = document.getElementById("current");
-  const fDiv = document.getElementById("finished");
-
-  cDiv.innerHTML = current.length ? "" : '<p class="empty">Nothing here yet.</p>';
-  fDiv.innerHTML = finished.length ? "" : '<p class="empty">No completed items yet.</p>';
-
-  current.forEach(b => {
-    const d = document.createElement("div");
-    d.className = "reading-card";
-    d.innerHTML = `${b.cover ? `<img src="${b.cover}" alt="${b.title} cover">` : ''}<h4>${b.title}</h4><p>${b.author || ''}</p>`;
-    cDiv.appendChild(d);
-  });
-
-  finished.forEach(b => {
-    const d = document.createElement("div");
-    d.className = "reading-card";
-    d.innerHTML = `${b.cover ? `<img src="${b.cover}" alt="${b.title} cover">` : ''}<h4>${b.title}</h4><p>${b.author || ''}</p>`;
-    fDiv.appendChild(d);
-  });
-}
-
-document.querySelectorAll(".tab-button").forEach(btn => {
-  btn.onclick = () => {
-    document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    tab = btn.dataset.type;
-    renderOverview();
-  };
-});
-
-document.getElementById("monthSelect").addEventListener("change", renderMonth);
-
-updateDashboard();
-</script>
-
-</body>
-</html>
