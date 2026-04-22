@@ -399,6 +399,20 @@ input[type=text], select, input[type=file] {
   font-style: italic;
 }
 
+.search-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.search-header .format-header{
+  margin-bottom:0;
+}
+.search-header button{
+  margin:0;
+}
+
 @media(max-width:900px){
   .format-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -445,6 +459,15 @@ input[type=text], select, input[type=file] {
     width: 100%;
     flex: none;
   }
+
+  .search-header{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .search-header button{
+    width:100%;
+  }
 }
 </style>
 </head>
@@ -465,13 +488,9 @@ input[type=text], select, input[type=file] {
   </div>
 
   <div class="section">
-
-  <!-- Toggle Button -->
-  <button id="toggleSeriesFormBtn">+ Add New Series</button>
-
-  <div class="form-card" id="seriesFormContainer" style="display:none;">
-    <form id="addSeriesForm">
-      <h3 id="seriesFormTitle" style="display:none;">Add New Series</h3>
+    <div class="form-card" id="seriesFormContainer" style="display:none;">
+      <form id="addSeriesForm">
+        <h3 id="seriesFormTitle" style="display:none;">Add New Series</h3>
         <input type="text" id="seriesName" placeholder="Series Name">
         <input type="text" id="seriesAuthor" placeholder="Author" required>
         <div id="bookInputs"></div>
@@ -530,30 +549,11 @@ input[type=text], select, input[type=file] {
 
   <div class="section">
     <div class="format-card">
-      <div class="format-header">🔍 Search Series/Books</div>
+      <div class="search-header">
+        <div class="format-header">🔍 Search Series/Books</div>
+        <button type="button" id="toggleSeriesFormBtn">+ Add New Series</button>
+      </div>
       <input type="text" id="searchInput" placeholder="Search by Series, Author, or Book">
-      
-      <div class="section">
-
-  <!-- Toggle Button -->
-  <button id="toggleSeriesFormBtn">+ Add New Series</button>
-
-  <div class="form-card" id="seriesFormContainer" style="display:none;">
-    <form id="addSeriesForm">
-      <h3 id="seriesFormTitle" style="display:none;">Add New Series</h3>
-        <input type="text" id="seriesName" placeholder="Series Name">
-        <input type="text" id="seriesAuthor" placeholder="Author" required>
-        <div id="bookInputs"></div>
-
-        <div class="series-form-actions">
-          <button type="button" id="addBookBtn">+ Add Another Book</button>
-          <button type="submit" id="submitSeriesBtn">Add Series</button>
-          <button type="button" id="clearSeriesBtn">Clear</button>
-          <button type="button" id="cancelSeriesEditBtn">Cancel Edit</button>
-        </div>
-      </form>
-    </div>
-  </div>
     </div>
   </div>
 
@@ -1041,6 +1041,8 @@ function resetSeriesForm() {
   document.getElementById('seriesFormTitle').textContent = 'Add New Series';
   document.getElementById('submitSeriesBtn').textContent = 'Add Series';
   document.getElementById('cancelSeriesEditBtn').style.display = 'none';
+  document.getElementById('seriesFormContainer').style.display = 'none';
+  document.getElementById('toggleSeriesFormBtn').textContent = '+ Add New Series';
 }
 
 function startEditSeries(seriesIndex) {
@@ -1059,6 +1061,8 @@ function startEditSeries(seriesIndex) {
   document.getElementById('seriesFormTitle').textContent = 'Edit Series';
   document.getElementById('submitSeriesBtn').textContent = 'Save Series Changes';
   document.getElementById('cancelSeriesEditBtn').style.display = 'inline-block';
+  document.getElementById('seriesFormContainer').style.display = 'block';
+  document.getElementById('toggleSeriesFormBtn').textContent = '− Hide Series Form';
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1080,7 +1084,6 @@ document.getElementById('addSeriesForm').addEventListener('submit', async e => {
   const author = document.getElementById('seriesAuthor').value.trim();
   const bookDivs = document.querySelectorAll('#bookInputs .book-input');
   const books = [];
-
 
   for (let div of bookDivs) {
     const title = div.querySelector('.bookTitle').value.trim();
@@ -1120,6 +1123,15 @@ document.getElementById('addSeriesForm').addEventListener('submit', async e => {
 });
 
 document.getElementById('searchInput').addEventListener('input', () => { renderCards(); });
+
+const toggleBtn = document.getElementById('toggleSeriesFormBtn');
+const formContainer = document.getElementById('seriesFormContainer');
+
+toggleBtn.addEventListener('click', () => {
+  const isHidden = formContainer.style.display === 'none';
+  formContainer.style.display = isHidden ? 'block' : 'none';
+  toggleBtn.textContent = isHidden ? '− Hide Series Form' : '+ Add New Series';
+});
 
 function filterSeries(series) {
   const query = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -1168,7 +1180,7 @@ function renderCards() {
         <span class="series-counter"></span><br>
         <div class="series-actions">
           <button type="button" onclick="startEditSeries(${sIndex})">Edit Series</button>
-		  <button type="button" onclick="clearSeriesBooks(${sIndex})">Clear</button>
+          <button type="button" onclick="clearSeriesBooks(${sIndex})">Clear</button>
           <button type="button" onclick="removeSeries(${sIndex})">Remove Series</button>
         </div>
       </div>
@@ -1429,15 +1441,6 @@ function clearSeriesBooks(index) {
   saveSeriesData(data);
   renderCards();
 }
-
-const toggleBtn = document.getElementById('toggleSeriesFormBtn');
-const formContainer = document.getElementById('seriesFormContainer');
-
-toggleBtn.addEventListener('click', () => {
-  const isHidden = formContainer.style.display === 'none';
-  formContainer.style.display = isHidden ? 'block' : 'none';
-  toggleBtn.textContent = isHidden ? '− Hide Series Form' : '+ Add New Series';
-});
 </script>
 </body>
 </html>
